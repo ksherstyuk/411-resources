@@ -26,14 +26,34 @@ class Boxer:
 
 
 def create_boxer(name: str, weight: int, height: int, reach: float, age: int) -> None:
+    """Creates a new boxer in the boxers table.
+
+    Args:
+        name (str): The boxer's name.
+        weight (int): The boxer's weight (in lb).
+        height (int): The boxer's height (in inches).
+        reach (float): The boxer's reach (in inches).
+        age (int): The boxer's age (in years).
+
+    Raises:
+        ValueError: If any field is invalid.
+        sqlite3.IntegrityError: If a boxer with the same name already exists.
+        sqlite3.Error: For any other database errors.
+
+    """
+    logger.info(f"Received request to create a boxer: {name} - ({weight})")
 
     if weight < 125:
+        logger.warning("Invalid weight provided.")
         raise ValueError(f"Invalid weight: {weight}. Must be at least 125.")
     if height <= 0:
+        logger.warning("Invalid height provided.")
         raise ValueError(f"Invalid height: {height}. Must be greater than 0.")
     if reach <= 0:
+        logger.warning("Invalid reach provided.")
         raise ValueError(f"Invalid reach: {reach}. Must be greater than 0.")
     if not (18 <= age <= 40):
+        logger.warning(f"Invalid age provided: {age}")
         raise ValueError(f"Invalid age: {age}. Must be between 18 and 40.")
 
     try:
@@ -43,19 +63,23 @@ def create_boxer(name: str, weight: int, height: int, reach: float, age: int) ->
             # Check if the boxer already exists (name must be unique)
             cursor.execute("SELECT 1 FROM boxers WHERE name = ?", (name,))
             if cursor.fetchone():
+                logger.warning(f"Invalid name provided (boxer already exists): {name}")
                 raise ValueError(f"Boxer with name '{name}' already exists")
 
             cursor.execute("""
                 INSERT INTO boxers (name, weight, height, reach, age)
                 VALUES (?, ?, ?, ?, ?)
             """, (name, weight, height, reach, age))
-
             conn.commit()
 
+            logger.info(f"Boxer successfully added: {name} - ({weight})")
+
     except sqlite3.IntegrityError:
+        logger.error(f"Invalid name provided (boxer already exists): {name}")
         raise ValueError(f"Boxer with name '{name}' already exists")
 
     except sqlite3.Error as e:
+        logger.error(f"Database error while creating boxer: {e}")
         raise e
 
 

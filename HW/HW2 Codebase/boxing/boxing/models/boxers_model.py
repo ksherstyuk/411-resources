@@ -84,7 +84,7 @@ def create_boxer(name: str, weight: int, height: int, reach: float, age: int) ->
 
 
 def delete_boxer(boxer_id: int) -> None:
-    """Permanently deletes a boxer from the ring.
+    """Permanently deletes a boxer from the catalog.
 
     Args:
         boxer_id (int): The ID of the boxer to delete.

@@ -310,7 +310,7 @@ def update_boxer_stats(boxer_id: int, result: str) -> None:
 
             cursor.execute("SELECT id FROM boxers WHERE id = ?", (boxer_id,))
             if cursor.fetchone() is None:
-                logger.error(f"Boxer '{boxer_name}' not found") #should halt execution
+                logger.error(f"Boxer '{boxer_id}' not found") #should halt execution
                 raise ValueError(f"Boxer with ID {boxer_id} not found.")
 
             if result == 'win':

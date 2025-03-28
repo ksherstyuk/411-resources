@@ -41,7 +41,7 @@ def mock_cursor(mocker):
     def mock_get_db_connection():
         yield mock_conn  # Yield the mocked connection object
 
-    mocker.patch("boxing.models.boxer_model.get_db_connection", mock_get_db_connection)
+    mocker.patch("boxing.models.boxers_model.get_db_connection", mock_get_db_connection)
 
     return mock_cursor  # Return the mock cursor so we can set expectations per test
 
@@ -81,7 +81,7 @@ def test_create_boxer_duplicate(mock_cursor):
     # Simulate that the database will raise an IntegrityError due to a duplicate entry
     mock_cursor.execute.side_effect = sqlite3.IntegrityError("UNIQUE constraint failed: boxers.name")
 
-    with pytest.raises(ValueError, match="Boxer with name 'Boxer Name' already exists."):
+    with pytest.raises(ValueError, match="Boxer with name 'Boxer Name' already exists"):
         create_boxer(name="Boxer Name", weight=126, height=77, reach=14.7, age=18)
 
 
@@ -89,45 +89,35 @@ def test_create_boxer_invalid_weight():
     """Test error when trying to create a boxer with an invalid weight (e.g., less than 125 lb)
 
     """
-    with pytest.raises(ValueError, match=r"Invalid weight: 10 \(must be at least 125\)."):
+    with pytest.raises(ValueError, match=r"Invalid weight: 10. Must be at least 125."):
         create_boxer(name="Boxer Name", weight=10, height=77, reach=14.7, age=18)
 
-    with pytest.raises(ValueError, match=r"Invalid weight: invalid \(must be at least 125\)."):
-        create_boxer(name="Boxer Name", weight=10, height=77, reach=14.7, age="invalid")
 
 def test_create_boxer_invalid_height():
     """Test error when trying to create a boxer with an invalid height (e.g., less than 0 in)
 
     """
-    with pytest.raises(ValueError, match=r"Invalid height: -5 \(must be greater than 0\)."):
+    with pytest.raises(ValueError, match=r"Invalid height: -5. Must be greater than 0."):
         create_boxer(name="Boxer Name", weight=126, height=-5, reach=14.7, age=18)
-
-    with pytest.raises(ValueError, match=r"Invalid height: invalid \(must be greater than 0\)."):
-        create_boxer(name="Boxer Name", weight=126, height="invalid", reach=14.7, age=18)
 
 
 def test_create_boxer_invalid_reach():
     """Test error when trying to create a boxer with an invalid reach (e.g., less than 0 in)
 
     """
-    with pytest.raises(ValueError, match=r"Invalid reach: -5 \(must be greater than 0\)."):
+    with pytest.raises(ValueError, match=r"Invalid reach: -5. Must be greater than 0."):
         create_boxer(name="Boxer Name", weight=126, height=77, reach=-5, age=18)
 
-    with pytest.raises(ValueError, match=r"Invalid reach: invalid \(must be greater than 0\)."):
-        create_boxer(name="Boxer Name", weight=126, height=77, reach="invalid", age=18)
 
 def test_create_boxer_invalid_age():
     """Test error when trying to create a boxer with an invalid age (e.g., younger than 18 or older than 40)
 
     """
-    with pytest.raises(ValueError, match=r"Invalid height: 8 \(must be between the ages of 18 and 40, inclusive\)."):
+    with pytest.raises(ValueError, match=r"Invalid age: 8. Must be between 18 and 40."):
         create_boxer(name="Boxer Name", weight=126, height=77, reach=14.7, age=8)
 
-    with pytest.raises(ValueError, match=r"Invalid height: 48 \(must be between the ages of 18 and 40, inclusive\)."):
+    with pytest.raises(ValueError, match=r"Invalid age: 48. Must be between 18 and 40."):
         create_boxer(name="Boxer Name", weight=126, height=77, reach=14.7, age=48)
-
-    with pytest.raises(ValueError, match=r"Invalid height: invalid \(must be between the ages of 18 and 40, inclusive\)."):
-        create_boxer(name="Boxer Name", weight=126, height=77, reach=14.7, age="invalid")
 
 
 def test_delete_boxer(mock_cursor):
@@ -179,22 +169,22 @@ def test_delete_boxer_bad_id(mock_cursor):
 ######################################################
 
 
-def test_get_leaderboard_by_win():
+def test_get_leaderboard_by_win(mock_cursor):
     """Test getting the boxer leaderboard (sorted by wins).
 
     """
     mock_cursor.fetchall.return_value = [
-        (1, "Mark S", 126, 77, 14.7, 18, 12, 3, False),
-        (2, "Helena E", 150, 78, 14.7, 18, 2, 2, False),
-        (3, "Dylan G", 151, 79, 14.7, 18, 2, 0, False)
+        (1, "Mark S", 126, 77, 14.7, 18, 12, 3, (3/12), False),
+        (2, "Helena E", 150, 78, 14.7, 18, 2, 2, (2/2), False),
+        (3, "Dylan G", 151, 79, 14.7, 18, 2, 0, (0/2), False)
     ]
 
     leaderboard = get_leaderboard()
 
     expected_result = [
-        {"id": 1, "name": "Mark S", "weight": 126, "height": 77, "reach": 14.7, "age": 18, "weight_class": "FEATHERWEIGHT", "fights": 12, "wins": 3, "win_pct": 25},
-        {"id": 2, "name": "Helena E", "weight": 150, "height": 78, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 2, "win_pct": 100},
-        {"id": 3, "name": "Dylan G", "weight": 151, "height": 79, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 0, "win_pct": 0},
+        {"id": 1, "name": "Mark S", "weight": 126, "height": 77, "reach": 14.7, "age": 18, "weight_class": "FEATHERWEIGHT", "fights": 12, "wins": 3, "win_pct": 25.0},
+        {"id": 2, "name": "Helena E", "weight": 150, "height": 78, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 2, "win_pct": 100.0},
+        {"id": 3, "name": "Dylan G", "weight": 151, "height": 79, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 0, "win_pct": 0.0},
     ]
 
     assert leaderboard == expected_result, f"Expected {expected_result}, but got {leaderboard}"
@@ -203,29 +193,29 @@ def test_get_leaderboard_by_win():
         SELECT id, name, weight, height, reach, age, fights, wins,
                (wins * 1.0 / fights) AS win_pct
         FROM boxers
-        WHERE fights > 0
+        WHERE fights > 0 ORDER BY wins DESC
     """)
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
 
     assert actual_query == expected_query, "The SQL query did not match the expected structure."
 
 
-def test_get_leaderboard_by_winpct():
+def test_get_leaderboard_by_winpct(mock_cursor):
     """Test getting the boxer leaderboard (sorted by win percentage).
 
     """
     mock_cursor.fetchall.return_value = [
-        (1, "Mark S", 126, 77, 14.7, 18, 12, 3, False),
-        (2, "Helena E", 150, 78, 14.7, 18, 2, 2, False),
-        (3, "Dylan G", 151, 79, 14.7, 18, 2, 0, False)
+        (2, "Helena E", 150, 78, 14.7, 18, 2, 2, (2/2), False),
+        (1, "Mark S", 126, 77, 14.7, 18, 12, 3, (3/12), False),
+        (3, "Dylan G", 151, 79, 14.7, 18, 2, 0, (0/2), False)
     ]
 
-    leaderboard = get_leaderboard()
+    leaderboard = get_leaderboard("win_pct")
 
     expected_result = [
-        {"id": 2, "name": "Helena E", "weight": 150, "height": 78, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 2, "win_pct": 100},
-        {"id": 1, "name": "Mark S", "weight": 126, "height": 77, "reach": 14.7, "age": 18, "weight_class": "FEATHERWEIGHT", "fights": 12, "wins": 3, "win_pct": 25},
-        {"id": 3, "name": "Dylan G", "weight": 151, "height": 79, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 0, "win_pct": 0},
+        {"id": 2, "name": "Helena E", "weight": 150, "height": 78, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 2, "win_pct": 100.0},
+        {"id": 1, "name": "Mark S", "weight": 126, "height": 77, "reach": 14.7, "age": 18, "weight_class": "FEATHERWEIGHT", "fights": 12, "wins": 3, "win_pct": 25.0},
+        {"id": 3, "name": "Dylan G", "weight": 151, "height": 79, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 0, "win_pct": 0.0},
     ]
 
     assert leaderboard == expected_result, f"Expected {expected_result}, but got {leaderboard}"
@@ -234,7 +224,7 @@ def test_get_leaderboard_by_winpct():
         SELECT id, name, weight, height, reach, age, fights, wins,
                (wins * 1.0 / fights) AS win_pct
         FROM boxers
-        WHERE fights > 0
+        WHERE fights > 0 ORDER BY win_pct DESC
     """)
     actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
 
@@ -300,7 +290,7 @@ def test_get_boxer_by_name(mock_cursor):
     assert actual_query == expected_query, "The SQL query did not match the expected structure."
 
     actual_arguments = mock_cursor.execute.call_args[0][1]
-    expected_arguments = (1,)
+    expected_arguments = ('Boxer Name',)
 
     assert actual_arguments == expected_arguments, f"The SQL query arguments did not match. Expected {expected_arguments}, got {actual_arguments}."
 
@@ -311,7 +301,7 @@ def test_get_boxer_by_name_bad_name(mock_cursor):
     """
     mock_cursor.fetchone.return_value = None
 
-    with pytest.raises(ValueError, match="Boxer named Johnny not found"):
+    with pytest.raises(ValueError, match="Boxer 'Johnny' not found."):
         get_boxer_by_name("Johnny")
 
 

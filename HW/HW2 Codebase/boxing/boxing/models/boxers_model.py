@@ -113,7 +113,20 @@ def delete_boxer(boxer_id: int) -> None:
         raise e
 
 
-def get_leaderboard(sort_by: str = "wins") -> List[dict[str, Any]]:
+def get_leaderboard(sort_by: str = "wins") -> List[dict[str, Any]]: 
+    """Returns a leaderboard containing all boxers sorted by an inputted success parameter.
+
+    Args:
+        sort_by (str): By default, "wins" (valid inputs "wins" or "win_pct"); indicates sorting parameter
+
+    Returns:
+        An list ordered by wins containing dictionaries corresponding to each existing boxer (containing their information).
+
+    Raises:
+        ValueError: If an invalid sorting parameter is provided.
+        sqlite3.Error: If any database error occurs.
+
+    """
     query = """
         SELECT id, name, weight, height, reach, age, fights, wins,
                (wins * 1.0 / fights) AS win_pct
@@ -132,7 +145,7 @@ def get_leaderboard(sort_by: str = "wins") -> List[dict[str, Any]]:
     try:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            logger.info("Attempting to get leaderboard")
+            logger.info(f"Attempting to get leaderboard, sorted by: {sort_by}")
             cursor.execute(query)
             rows = cursor.fetchall()
 
@@ -152,7 +165,7 @@ def get_leaderboard(sort_by: str = "wins") -> List[dict[str, Any]]:
             }
             leaderboard.append(boxer)
 
-        logger.info("Leaderboard successfully retrieved")
+        logger.info(f"Leaderboard sorted by {sort_by} successfully retrieved")
         return leaderboard
 
     except sqlite3.Error as e:
@@ -285,13 +298,13 @@ def update_boxer_stats(boxer_id: int, result: str) -> None:
         sqlite3.Error: If any database error occurs.
 
     """
+    logger.info(f"Received request to identify update boxer with ID '{boxer_id}' to reflect result: '{result}'")
+
     if result not in {'win', 'loss'}:
         logger.error(f"Invalid result: {result}. Expected 'win' or 'loss'.")
         raise ValueError(f"Invalid result: {result}. Expected 'win' or 'loss'.")
 
     try:
-        logger.info(f"Received request to identify update boxer with ID '{boxer_id}' to reflect result: '{result}'")
-
         with get_db_connection() as conn:
             cursor = conn.cursor()
 

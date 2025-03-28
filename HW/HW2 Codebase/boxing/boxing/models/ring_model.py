@@ -16,6 +16,7 @@ class RingModel:
         """Initializes an empty RingModel instance with no boxers in the ring.
         """
         self.ring: List[Boxer] = []
+        logger.info("Initialized empty ring")
 
     def fight(self) -> str:
         """Simulates a fight between the two boxers in the ring.
@@ -29,10 +30,13 @@ class RingModel:
         Raises:
             ValueError: If fewer than two boxers are in the ring.
         """
+        logger.info("Starting a fight between two boxers")
         if len(self.ring) < 2:
+            logger.warning("Cannot start fight — fewer than two boxers in ring")
             raise ValueError("There must be two boxers to start a fight.")
 
         boxer_1, boxer_2 = self.get_boxers()
+        logger.info(f"Boxers in ring: {boxer_1.name} vs {boxer_2.name}")
 
         skill_1 = self.get_fighting_skill(boxer_1)
         skill_2 = self.get_fighting_skill(boxer_2)
@@ -43,6 +47,7 @@ class RingModel:
         normalized_delta = 1 / (1 + math.e ** (-delta))
 
         random_number = get_random()
+        logger.debug(f"Skill delta: {delta}, Normalized delta: {normalized_delta}, Random: {random_number}")
 
         if random_number < normalized_delta:
             winner = boxer_1
@@ -50,17 +55,20 @@ class RingModel:
         else:
             winner = boxer_2
             loser = boxer_1
+        logger.info(f"{winner.name} wins the fight")
 
         update_boxer_stats(winner.id, 'win')
         update_boxer_stats(loser.id, 'loss')
 
         self.clear_ring()
+        logger.info("Ring cleared after fight")
 
         return winner.name
 
     def clear_ring(self):
         """Clears all boxers from the ring.
         """
+        logger.info("Clearing the ring")
         if not self.ring:
             return
         self.ring.clear()
@@ -75,10 +83,13 @@ class RingModel:
             TypeError: If the input is not an instance of Boxer.
             ValueError: If the ring already has two boxers.
         """
+        logger.info(f"Attempting to enter boxer: {boxer}")
         if not isinstance(boxer, Boxer):
+            logger.error(f"Invalid type: Expected 'Boxer', got '{type(boxer).__name__}'")
             raise TypeError(f"Invalid type: Expected 'Boxer', got '{type(boxer).__name__}'")
 
         if len(self.ring) >= 2:
+            logger.warning("Ring is full. Cannot add more boxers")
             raise ValueError("Ring is full, cannot add more boxers.")
 
         self.ring.append(boxer)
@@ -93,7 +104,8 @@ class RingModel:
             pass
         else:
             pass
-
+        
+        logger.debug(f"Returning boxers in ring: {[b.name for b in self.ring]}")
         return self.ring
 
     def get_fighting_skill(self, boxer: Boxer) -> float:
@@ -105,8 +117,10 @@ class RingModel:
         Returns:
             float: The computed fighting skill score.
         """
+        logger.debug(f"Calculating skill for boxer {boxer.name}: weight={boxer.weight}, reach={boxer.reach}, age={boxer.age}")
         # Arbitrary calculations
         age_modifier = -1 if boxer.age < 25 else (-2 if boxer.age > 35 else 0)
         skill = (boxer.weight * len(boxer.name)) + (boxer.reach / 10) + age_modifier
 
+        logger.debug(f"Skill computed: {skill}")
         return skill

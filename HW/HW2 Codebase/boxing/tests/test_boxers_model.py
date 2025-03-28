@@ -179,12 +179,43 @@ def test_delete_boxer_bad_id(mock_cursor):
 ######################################################
 
 
-def test_get_leaderboard():
+def test_get_leaderboard_by_win():
     """Test getting the boxer leaderboard (sorted by wins).
 
     """
     mock_cursor.fetchall.return_value = [
-        (1, "Mark S", 126, 77, 14.7, 18, 4, 1, False),
+        (1, "Mark S", 126, 77, 14.7, 18, 12, 3, False),
+        (2, "Helena E", 150, 78, 14.7, 18, 2, 2, False),
+        (3, "Dylan G", 151, 79, 14.7, 18, 2, 0, False)
+    ]
+
+    leaderboard = get_leaderboard()
+
+    expected_result = [
+        {"id": 1, "name": "Mark S", "weight": 126, "height": 77, "reach": 14.7, "age": 18, "weight_class": "FEATHERWEIGHT", "fights": 12, "wins": 3, "win_pct": 25},
+        {"id": 2, "name": "Helena E", "weight": 150, "height": 78, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 2, "win_pct": 100},
+        {"id": 3, "name": "Dylan G", "weight": 151, "height": 79, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 0, "win_pct": 0},
+    ]
+
+    assert leaderboard == expected_result, f"Expected {expected_result}, but got {leaderboard}"
+
+    expected_query = normalize_whitespace("""
+        SELECT id, name, weight, height, reach, age, fights, wins,
+               (wins * 1.0 / fights) AS win_pct
+        FROM boxers
+        WHERE fights > 0
+    """)
+    actual_query = normalize_whitespace(mock_cursor.execute.call_args[0][0])
+
+    assert actual_query == expected_query, "The SQL query did not match the expected structure."
+
+
+def test_get_leaderboard_by_winpct():
+    """Test getting the boxer leaderboard (sorted by win percentage).
+
+    """
+    mock_cursor.fetchall.return_value = [
+        (1, "Mark S", 126, 77, 14.7, 18, 12, 3, False),
         (2, "Helena E", 150, 78, 14.7, 18, 2, 2, False),
         (3, "Dylan G", 151, 79, 14.7, 18, 2, 0, False)
     ]
@@ -193,7 +224,7 @@ def test_get_leaderboard():
 
     expected_result = [
         {"id": 2, "name": "Helena E", "weight": 150, "height": 78, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 2, "win_pct": 100},
-        {"id": 1, "name": "Mark S", "weight": 126, "height": 77, "reach": 14.7, "age": 18, "weight_class": "FEATHERWEIGHT", "fights": 4, "wins": 1, "win_pct": 25},
+        {"id": 1, "name": "Mark S", "weight": 126, "height": 77, "reach": 14.7, "age": 18, "weight_class": "FEATHERWEIGHT", "fights": 12, "wins": 3, "win_pct": 25},
         {"id": 3, "name": "Dylan G", "weight": 151, "height": 79, "reach": 14.7, "age": 18, "weight_class": "LIGHTWEIGHT", "fights": 2, "wins": 0, "win_pct": 0},
     ]
 

@@ -125,8 +125,43 @@ get_boxer_by_name() {
 #
 ##########################################################
 
-#TO DO
+enter_boxer_into_ring() {
+  # Sends a POST request to enter a boxer into the ring
+  # Args:
+  #   $1: The name of the boxer to enter
+  # Output:
+  #   Echoes success or failure message to the console
+  
+  boxer_name=$1
 
+  echo "Entering boxer '$boxer_name' into the ring..."
+  response=$(curl -s -X POST "$BASE_URL/enter-ring/$boxer_name")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Boxer '$boxer_name' successfully entered the ring."
+  else
+    echo "Failed to enter boxer '$boxer_name' into the ring."
+    exit 1
+  fi
+}
+
+simulate_fight() {
+  # Sends a POST request to simulate a fight between the two boxers in the ring
+  # Output:
+  #   Echoes fight result if successful, or failure message
+
+  echo "Simulating a fight..."
+  response=$(curl -s -X POST "$BASE_URL/fight")
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "Fight simulation successful."
+    if [ "$ECHO_JSON" = true ]; then
+      echo "Fight result:"
+      echo "$response" | jq .
+    fi
+  else
+    echo "Fight simulation failed."
+    exit 1
+  fi
+}
 ############################################################
 #
 # Leaderboard

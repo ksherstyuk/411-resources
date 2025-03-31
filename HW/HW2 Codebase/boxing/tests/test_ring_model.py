@@ -19,3 +19,21 @@ def test_enter_ring_full():
     ring.enter_ring(Boxer(2, "B", 160, 70, 75.0, 28))
     with pytest.raises(ValueError):
         ring.enter_ring(Boxer(3, "C", 160, 70, 75.0, 28))
+
+def test_clear_ring():
+    ring = RingModel()
+    ring.enter_ring(Boxer(1, "Ali", 160, 70, 75.0, 28))
+    ring.clear_ring()
+    assert ring.ring == []
+
+def test_get_boxers():
+    ring = RingModel()
+    boxer = Boxer(1, "Ali", 160, 70, 75.0, 28)
+    ring.enter_ring(boxer)
+    assert ring.get_boxers() == [boxer]
+
+def test_get_fighting_skill():
+    ring = RingModel()
+    boxer = Boxer(1, "Ali", 160, 70, 75.0, 28)
+    skill = ring.get_fighting_skill(boxer)
+    assert isinstance(skill, float)

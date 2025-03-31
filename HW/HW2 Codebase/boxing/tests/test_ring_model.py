@@ -82,7 +82,7 @@ def test_fight_with_insufficient_boxers():
     ring = RingModel()
     ring.enter_ring(Boxer(1, "Solo", 160, 70, 75.0, 28))
 
-    with pytest.raises(ValueError, match="Not enough boxers to fight"):   #Should raise error if attempting to fight with less than 2 boxers
+    with pytest.raises(ValueError, match="There must be two boxers to start a fight."):   #Should raise error if attempting to fight with less than 2 boxers
         ring.fight()
 
 

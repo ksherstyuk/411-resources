@@ -131,7 +131,7 @@ enter_boxer_into_ring() {
   #   $1: The name of the boxer to enter
   # Output:
   #   Echoes success or failure message to the console
-  
+
   boxer_name=$1
 
   echo "Entering boxer '$boxer_name' into the ring..."
@@ -203,10 +203,14 @@ get_boxer_by_id 2
 get_boxer_by_name "Mark"
 
 #RING STUFF ( NEED TO ADD)
-#
-#
-#
-#
+
+#Enter boxers into the ring
+enter_boxer_into_ring "Helen"
+enter_boxer_into_ring "Mark"
+
+#Simulate a fight between the two boxers
+simulate_fight
+
 
 get_leaderboard
 

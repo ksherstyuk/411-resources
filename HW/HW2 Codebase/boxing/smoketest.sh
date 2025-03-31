@@ -158,10 +158,10 @@ check_db
 
 # Create boxers
 create_boxer "John" 160 78 15.0 20
-create_song "Burt" 150 78 12.0 21
-create_song "Helen" 130 78 15.2 22
-create_song "Mark" 133 78 14.0 23
-create_song "Led" 155 78 15.3 29
+create_boxer "Burt" 150 78 12.0 21
+create_boxer "Helen" 130 78 15.2 22
+create_boxer "Mark" 133 78 14.0 23
+create_boxer "Led" 155 78 15.3 29
 
 delete_boxer_by_id 1
 get_boxer_by_id 2

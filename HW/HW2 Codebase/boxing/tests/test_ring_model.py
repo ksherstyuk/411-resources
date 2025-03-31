@@ -73,3 +73,36 @@ def test_fight_success(mock_update, mock_random):
     winner = ring.fight()
     assert winner in ["Ali", "Tyson"]  #Winner should be either "Ali" or "Tyson"
     assert mock_update.call_count == 2 #Both winner and loser stats should be updated
+
+
+def test_fight_with_insufficient_boxers():
+    """
+    Test that fight() raises a ValueError when fewer than 2 boxers are in the ring.
+    """
+    ring = RingModel()
+    ring.enter_ring(Boxer(1, "Solo", 160, 70, 75.0, 28))
+
+    with pytest.raises(ValueError, match="Not enough boxers to fight"):   #Should raise error if attempting to fight with less than 2 boxers
+        ring.fight()
+
+
+@patch("boxing.models.ring_model.get_random", return_value=0.5)
+@patch("boxing.models.ring_model.update_boxer_stats")
+def test_fight_with_equal_skills(mock_update, mock_random):
+    """
+    Tests the fight method when both boxers have equal fighting skills
+    Ensures that a winner is selected and both winner and loser stats are updated.
+    """
+    ring = RingModel()
+
+    #Identical boxer stats
+    boxer1 = Boxer(1, "Twin1", 160, 70, 75.0, 28)
+    boxer2 = Boxer(2, "Twin2", 160, 70, 75.0, 28)
+
+    ring.enter_ring(boxer1)
+    ring.enter_ring(boxer2)
+
+    winner = ring.fight()
+
+    assert winner in ["Twin1", "Twin2"]   #Should be 1 winner and 1 loser
+    assert mock_update.call_count == 2    #Both stats should be updated

@@ -10,6 +10,9 @@ COPY . /app
 # Copy the env file to the container
 COPY .env /app/.env
 
+# Install curl and bash for smoke testing and shell compatabilty
+RUN apt-get update && apt-get install -y curl bash
+
 # Install any needed packages specified in requirements.txt
 # In production, you would want to ensure that any re-compiled packages
 # With the same version number are re-downloaded
@@ -23,6 +26,14 @@ RUN apt-get update && apt-get install -y sqlite3
 COPY ./sql/create_db.sh /app/sql/create_db.sh
 COPY ./sql/init_db.sql /app/sql/init_db.sql
 RUN chmod +x /app/sql/create_db.sh
+
+# Add entrypoing script and make it executable
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Copy smoketest script and make it executable
+COPY smoketest.sh /app/smoketest.sh
+RUN chmod +x /app/smoketest.sh
 
 # Define a volume for persisting the database
 VOLUME ["/app/db"]

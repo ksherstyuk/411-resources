@@ -60,14 +60,18 @@ create_boxer() {
   reach=$4
   age=$5
 
-  echo "Adding boxer ($name) to the ring..."
-  curl -s -X POST "$BASE_URL/create-boxer" -H "Content-Type: application/json" \
-    -d "{\"name\":\"$name\", \"weight\":\"$weight\", \"height\":$height, \"reach\":\"$reach\", \"age\":$age}" | grep -q '"status": "success"'
+  echo "Creating boxer: $name..."
+  response=$(curl -s -X POST "$BASE_URL/add-boxer" -H "Content-Type: application/json" \
+    -d "{\"name\":\"$name\", \"weight\":$weight, \"height\":$height, \"reach\":$reach, \"age\":$age}")
 
+  echo "Server response for boxer '$name':"
+  echo "$response"
+
+  echo "$response" | grep -q '"status": "success"'
   if [ $? -eq 0 ]; then
-    echo "Boxer added successfully."
+    echo "Boxer '$name' created successfully."
   else
-    echo "Failed to add Boxer."
+    echo "Failed to create boxer '$name'."
     exit 1
   fi
 }
@@ -135,8 +139,15 @@ enter_boxer_into_ring() {
   boxer_name=$1
 
   echo "Entering boxer '$boxer_name' into the ring..."
-  response=$(curl -s -X POST "$BASE_URL/enter-ring/$boxer_name")
-  if echo "$response" | grep -q '"status": "success"'; then
+  response=$(curl -s -X POST "$BASE_URL/enter-ring" \
+    -H "Content-Type: application/json" \
+    -d "{\"name\": \"$boxer_name\"}")
+
+  echo "Server response:"
+  echo "$response"
+
+  echo "$response" | grep -q '"status": "success"'
+  if [ $? -eq 0 ]; then
     echo "Boxer '$boxer_name' successfully entered the ring."
   else
     echo "Failed to enter boxer '$boxer_name' into the ring."
@@ -150,8 +161,13 @@ simulate_fight() {
   #   Echoes fight result if successful, or failure message
 
   echo "Simulating a fight..."
-  response=$(curl -s -X POST "$BASE_URL/fight")
-  if echo "$response" | grep -q '"status": "success"'; then
+  response=$(curl -s -X GET "$BASE_URL/fight")
+
+  echo "Server response:"
+  echo "$response"
+
+  echo "$response" | grep -q '"status": "success"'
+  if [ $? -eq 0 ]; then
     echo "Fight simulation successful."
     if [ "$ECHO_JSON" = true ]; then
       echo "Fight result:"

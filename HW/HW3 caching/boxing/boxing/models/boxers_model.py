@@ -145,12 +145,12 @@ class Boxers(db.Model):
         try:
             boxer = cls.query.get(boxer_id)
             if not boxer:
-                logger.info(f"Song with {boxer_id} not found")
-                raise ValueError(f"Song with {boxer_id} not found")
+                logger.info(f"Boxer with ID {boxer_id} not found")
+                raise ValueError(f"Boxer with {boxer_id} not found")
             logger.info(f"Successfully retrieved boxer: {boxer.name} ")
             return boxer
         except SQLAlchemyError as e:
-            logger.error(f"Database error while retrieving song by ID {boxer_id}: {e}")
+            logger.error(f"Database error while retrieving Boxer by ID {boxer_id}: {e}")
             raise
 
     @classmethod
@@ -172,12 +172,12 @@ class Boxers(db.Model):
         try:
             boxer = cls.query.get(name)
             if not boxer:
-                logger.info(f"Song with {name} not found")
-                raise ValueError(f"Song with {name} not found")
+                logger.info(f"Boxer with name {name} not found")
+                raise ValueError(f"Boxer with name {name} not found")
             logger.info(f"Successfully retrieved boxer: {boxer.name} ")
             return boxer
         except SQLAlchemyError as e:
-            logger.error(f"Database error while retrieving song by ID {name}: {e}")
+            logger.error(f"Database error while retrieving Boxer by name {name}: {e}")
             raise
 
     @classmethod
@@ -191,13 +191,22 @@ class Boxers(db.Model):
             ValueError: If the boxer with the given ID does not exist.
 
         """
-        boxer = cls.get_boxer_by_id(boxer_id)
-        if boxer is None:
-            logger.info(f"Boxer with ID {boxer_id} not found.")
-            raise ValueError(f"Boxer with ID {boxer_id} not found.")
-        db.session.delete(boxer)
-        db.session.commit()
-        logger.info(f"Boxer with ID {boxer_id} permanently deleted.")
+
+        logger.info(f"Received request to delete Boxer with ID {boxer_id}")
+
+        try:
+            boxer = cls.get_boxer_by_id(boxer_id)
+            if not boxer:
+                logger.warning(f"Attempted to delete non-existent Boxer with ID {boxer_id}")
+                raise ValueError(f"Boxer with ID {boxer_id} not found.")
+
+            db.session.delete(boxer)
+            db.session.commit()
+            logger.info(f"Boxer with ID {boxer_id} permanently deleted.")
+        except SQLAlchemyError as e:
+            logger.error(f"Database error while deleting song with ID {boxer_id}: {e}")
+            db.session.rollback()
+            raise
 
     def update_stats(self, result: str) -> None:
         """Update the boxer's fight and win count based on result.

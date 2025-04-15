@@ -2,6 +2,7 @@ import logging
 from typing import List
 
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 
 from boxing.db import db
 from boxing.utils.logger import configure_logger
@@ -21,7 +22,7 @@ class Boxers(db.Model):
 
     """
 
-    __tablename__ = 'boxers'
+    __tablename__ = "boxers"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String, unique=True, nullable=False)
@@ -48,14 +49,14 @@ class Boxers(db.Model):
             - Fight statistics (`fights` and `wins`) are initialized to 0 by default in the database schema.
 
         """
-        #checks exist in init_db.sql structure?
+        # checks exist in init_db.sql structure?
         self.name = name
         self.weight = weight
         self.height = height
         self.height = height
         self.reach = reach
         self.age = age
-        self.weight_class = get_weight_class(weight)
+        self.weight_class = self.get_weight_class(weight)
 
     @classmethod
     def get_weight_class(cls, weight: float) -> str:
@@ -77,25 +78,29 @@ class Boxers(db.Model):
             ValueError: If the weight is less than 125.
 
         """
-        logger.info(f"Received request to identify weight class corresponding to {weight} lbs")
+        logger.info(
+            f"Received request to identify weight class corresponding to {weight} lbs"
+        )
 
         if weight >= 203:
-            weight_class = 'HEAVYWEIGHT'
+            weight_class = "HEAVYWEIGHT"
         elif weight >= 166:
-            weight_class = 'MIDDLEWEIGHT'
+            weight_class = "MIDDLEWEIGHT"
         elif weight >= 133:
-            weight_class = 'LIGHTWEIGHT'
+            weight_class = "LIGHTWEIGHT"
         elif weight >= 125:
-            weight_class = 'FEATHERWEIGHT'
+            weight_class = "FEATHERWEIGHT"
         else:
             logger.error(f"Invalid weight: {weight}. Weight must be at least 125 lbs")
             raise ValueError(f"Invalid weight: {weight}. Weight must be at least 125.")
-    
+
         logger.info(f"Weight class successfully identified as {weight_class}")
         return weight_class
 
     @classmethod
-    def create_boxer(cls, name: str, weight: float, height: float, reach: float, age: int) -> None:
+    def create_boxer(
+        cls, name: str, weight: float, height: float, reach: float, age: int
+    ) -> None:
         """Create and persist a new Boxer instance.
 
         Args:
@@ -135,9 +140,18 @@ class Boxers(db.Model):
             ValueError: If the boxer with the given ID does not exist.
 
         """
-        if boxer is None:
-            logger.info(f"Boxer with ID {boxer_id} not found.")
-        pass
+        logger.info(f"Attempting to retrieve boxer with ID {boxer_id}")
+
+        try:
+            boxer = cls.query.get(boxer_id)
+            if not boxer:
+                logger.info(f"Song with {boxer_id} not found")
+                raise ValueError(f"Song with {boxer_id} not found")
+            logger.info(f"Successfully retrieved boxer: {boxer.name} ")
+            return boxer
+        except SQLAlchemyError as e:
+            logger.error(f"Database error while retrieving song by ID {boxer_id}: {e}")
+            raise
 
     @classmethod
     def get_boxer_by_name(cls, name: str) -> "Boxers":
@@ -198,7 +212,9 @@ class Boxers(db.Model):
             raise ValueError("Wins cannot exceed number of fights.")
 
         db.session.commit()
-        logger.info(f"Updated stats for boxer {self.name}: {self.fights} fights, {self.wins} wins.")
+        logger.info(
+            f"Updated stats for boxer {self.name}: {self.fights} fights, {self.wins} wins."
+        )
 
     @staticmethod
     def get_leaderboard(sort_by: str = "wins") -> List[dict]:
@@ -225,18 +241,21 @@ class Boxers(db.Model):
         def compute_win_pct(b: Boxers) -> float:
             return round((b.wins / b.fights) * 100, 1) if b.fights > 0 else 0.0
 
-        leaderboard = [{
-            "id": b.id,
-            "name": b.name,
-            "weight": b.weight,
-            "height": b.height,
-            "reach": b.reach,
-            "age": b.age,
-            "weight_class": b.weight_class,
-            "fights": b.fights,
-            "wins": b.wins,
-            "win_pct": compute_win_pct(b)
-        } for b in boxers]
+        leaderboard = [
+            {
+                "id": b.id,
+                "name": b.name,
+                "weight": b.weight,
+                "height": b.height,
+                "reach": b.reach,
+                "age": b.age,
+                "weight_class": b.weight_class,
+                "fights": b.fights,
+                "wins": b.wins,
+                "win_pct": compute_win_pct(b),
+            }
+            for b in boxers
+        ]
 
         leaderboard.sort(key=lambda b: b[sort_by], reverse=True)
         logger.info("Leaderboard retrieved successfully.")

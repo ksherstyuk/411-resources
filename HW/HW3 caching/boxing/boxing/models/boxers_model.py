@@ -238,7 +238,7 @@ class Boxers(db.Model):
         logger.info(f"Received request to delete Boxer with ID {boxer_id}")
 
         try:
-            boxer = cls.get_boxer_by_id(boxer_id)
+            boxer = cls.query.get(boxer_id)
             if not boxer:
                 logger.warning(f"Attempted to delete non-existent Boxer with ID {boxer_id}")
                 raise ValueError(f"Boxer with ID {boxer_id} not found.")

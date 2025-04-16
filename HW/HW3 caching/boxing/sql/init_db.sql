@@ -11,7 +11,9 @@ CREATE TABLE boxers (
     UNIQUE(name)
 );
 
-/*BELOW INDEXES ARE WRONG!!!!!*/
-CREATE INDEX idx_songs_artist_title ON songs(artist, title);
+CREATE INDEX idx_boxers_wins ON boxers(wins);
+/*BELOW INDEXES ARE WRONG!!!!!;; .sort stuff??*/
+/*query = query.order_by(cls.play_count.desc())*/
+/*CREATE INDEX idx_songs_artist_title ON songs(artist, title);
 CREATE INDEX idx_songs_year ON songs(year);
-CREATE INDEX idx_songs_play_count ON songs(play_count);
+CREATE INDEX idx_songs_play_count ON songs(play_count); */

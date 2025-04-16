@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import logging
 import math
 import os
@@ -148,7 +150,7 @@ class RingModel:
             else:
                 logger.debug(f"Using cached boxer {boxer_id} (TTL valid).")
 
-        logger.info(f"Retrieved {len(boxers)} boxers from the ring.")
+        logger.info(f"Retrieved {len(self.ring)} boxers from the ring.") #changed from len(boxers)
 
     def get_fighting_skill(self, boxer: Boxers) -> float:
         """Calculates the fighting skill for a boxer based on arbitrary rules.
@@ -178,4 +180,6 @@ class RingModel:
         """Clears the local TTL cache of boxer objects.
 
         """
+        self._boxer_cache = {}
+        self._ttl = {}
         logger.info("Clearing local boxer cache in RingModel.")

@@ -11,6 +11,7 @@ CREATE TABLE boxers (
     UNIQUE(name)
 );
 
+CREATE INDEX idx_boxers_name ON boxers(name);
 CREATE INDEX idx_boxers_wins ON boxers(wins);
 /*BELOW INDEXES ARE WRONG!!!!!;; .sort stuff??*/
 /*query = query.order_by(cls.play_count.desc())*/

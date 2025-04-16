@@ -26,12 +26,16 @@ class RingModel:
 
         Attributes:
             ring (List[int]): The list of ids of the boxers in the ring.
-            _boxer_cache (dict[int, Boxers]): A cache to store boxer objects for quick access.
+            _boxer_cache (dict[int, Boxers]): A cache to store boxer objects for quick access._tt
             _ttl (dict[int, float]): A cache to store the time-to-live for each boxer.
             ttl_seconds (int): The time-to-live in seconds for the cached boxer objects.
 
         """
-        pass
+        self.ring: List[int] = []
+        self._boxer_cache: dict[int, Boxers] = {}
+        self._ttl: dict[int, float] = {}
+        self.ttl_seconds : int = int(os.getenv("TTL_SECONDS", "60"))
+
 
     def fight(self) -> str:
         """Simulates a fight between two combatants.

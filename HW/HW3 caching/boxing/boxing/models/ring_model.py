@@ -123,6 +123,8 @@ class RingModel:
             logger.error(str(e))
             raise
 
+
+        self.ring.append(boxer_id) # missing from logic
         logger.info(f"Adding boxer '{boxer.name}' (ID {boxer_id}) to the ring")
 
         logger.info(f"Current boxers in the ring: {[Boxers.get_boxer_by_id(b).name for b in self.ring]}")

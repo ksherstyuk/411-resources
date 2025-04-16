@@ -33,7 +33,24 @@ class Boxers(db.Model):
     fights = db.Column(db.Integer, nullable=False, default=0)
     wins = db.Column(db.Integer, nullable=False, default=0)
     weight_class = db.Column(db.String, nullable=False)
+    
+    def validate(self) -> None:
+        """Validates the boxer instance before committing to the database.
 
+        Raises:
+            ValueError: If any required fields are invalid.
+        """
+        if not self.name or not isinstance(self.name, str):
+            raise ValueError("Name must be a non-empty string.")
+        if not isinstance(self.weight, float) or self.weight < 125:
+            raise ValueError("Weight must be a float greater or equal to 125.")
+        if not isinstance(self.height, float) or self.height <= 0:
+            raise ValueError("Height must be a positive float.")
+        if not isinstance(self.reach, float) or self.reach <= 0:
+            raise ValueError("Reach must be a postiive float.")
+        if not isinstance(self.age, int) or self.age < 18 or self.age > 40:
+            raise ValueError("Age must be an integer between 18-40 (inclusive).")
+    
     def __init__(self, name: str, weight: float, height: float, reach: float, age: int):
         """Initialize a new Boxer instance with basic attributes.
 
@@ -117,14 +134,40 @@ class Boxers(db.Model):
 
         """
         logger.info(f"Creating boxer: {name}, {weight=} {height=} {reach=} {age=}")
-
+        
         try:
-            logger.info(f"Boxer created successfully: {name}")
+            boxer = Boxers(
+                name=name.strip(),
+                weight=weight,
+                height=height,
+                reach=reach,
+                age=age,
+            )
+            boxer.validate()
+        except ValueError as e:
+            logger.warning(f"Validation failed: {e}")
+            raise
+    
+        try:
+            # Check for existing boxer with same name 
+            existing = Boxers.query.filter_by(name=name.strip()).first()
+            if existing:
+                logger.error(f"Boxer already exists: {name}")
+                raise ValueError(f"Boxer with name '{name}' already exists.")
+
+            db.session.add(boxer)
+            db.session.commit()
+            logger.info(f"Boxer successfully added: {name})")
+
         except IntegrityError:
-            logger.error(f"Boxer with name '{name}' already exists.")
-        except SQLAlchemyError as e:
+            logger.error(f"Boxer already exists: {name}")
             db.session.rollback()
-            logger.error(f"Database error during creation: {e}")
+            raise ValueError(f"Boxer with name '{name}' already exists.")
+
+        except SQLAlchemyError as e:
+            logger.error(f"Database error while creating song: {e}")
+            db.session.rollback()
+            raise
 
     @classmethod
     def get_boxer_by_id(cls, boxer_id: int) -> "Boxers":

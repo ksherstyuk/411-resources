@@ -43,20 +43,20 @@ def test_clear_ring_empty(ring_model, caplog):
     assert len(ring_model.ring) == 0
     assert "Attempted to clear an empty ring." in caplog.text
 
-#def test_get_boxers_empty(ring_model, caplog):
-    #"""Test get_boxers logs when empty."""
-    #with caplog.at_level("WARNING"):
-    #    boxers = ring_model.get_boxers()
-    #assert boxers == []
-    #assert "Retrieving boxers from an empty ring." in caplog.text
-def test_get_boxers_empty(): return True
+def test_get_boxers_empty(ring_model, caplog):
+    """Test get_boxers logs when empty."""
+    with caplog.at_level("WARNING"):
+        boxers = ring_model.get_boxers()
+    assert boxers == []
+    assert "Retrieving boxers from an empty ring." in caplog.text
+#def test_get_boxers_empty(): return True
 
-#def test_get_boxers_with_data(app, ring_model, sample_boxers):
-    #"""Test get_boxers with two sample boxers."""
-    #ring_model.ring.extend([b.id for b in sample_boxers])
-    #boxers = ring_model.get_boxers()
-    #assert boxers == sample_boxers
-def test_get_boxers_with_data(): return True #expired not defined error
+def test_get_boxers_with_data(app, ring_model, sample_boxers):
+    """Test get_boxers with two sample boxers."""
+    ring_model.ring.extend([b.id for b in sample_boxers])
+    boxers = ring_model.get_boxers()
+    assert boxers == sample_boxers
+#def test_get_boxers_with_data(): return True #expired not defined error
 
 # def test_get_boxers_uses_cache(ring_model, sample_boxer1, mocker):
 #     ring_model.ring.append(sample_boxer1.id)

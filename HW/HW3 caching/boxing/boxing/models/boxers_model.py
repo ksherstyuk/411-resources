@@ -33,7 +33,7 @@ class Boxers(db.Model):
     fights = db.Column(db.Integer, nullable=False, default=0)
     wins = db.Column(db.Integer, nullable=False, default=0)
     weight_class = db.Column(db.String, nullable=False)
-    
+
     def validate(self) -> None:
         """Validates the boxer instance before committing to the database.
 
@@ -43,14 +43,17 @@ class Boxers(db.Model):
         if not self.name or not isinstance(self.name, str):
             raise ValueError("Name must be a non-empty string.")
         if not isinstance(self.weight, float) or self.weight < 125:
-            raise ValueError("Weight must be a float greater or equal to 125.")
+            raise ValueError(
+                "Weight must be a float greater or equal to 125.",
+                self.weight,
+            )
         if not isinstance(self.height, float) or self.height <= 0:
             raise ValueError("Height must be a positive float.")
         if not isinstance(self.reach, float) or self.reach <= 0:
             raise ValueError("Reach must be a postiive float.")
         if not isinstance(self.age, int) or self.age < 18 or self.age > 40:
             raise ValueError("Age must be an integer between 18-40 (inclusive).")
-    
+
     def __init__(self, name: str, weight: float, height: float, reach: float, age: int):
         """Initialize a new Boxer instance with basic attributes.
 
@@ -134,22 +137,23 @@ class Boxers(db.Model):
 
         """
         logger.info(f"Creating boxer: {name}, {weight=} {height=} {reach=} {age=}")
-        
+
         try:
             boxer = Boxers(
                 name=name.strip(),
-                weight=weight,
-                height=height,
-                reach=reach,
-                age=age,
+                weight=float(weight),
+                height=float(height),
+                reach=float(reach),
+                age=int(age),
             )
+            print("Boxer created with weight: ", boxer.weight)
             boxer.validate()
         except ValueError as e:
             logger.warning(f"Validation failed: {e}")
             raise
-    
+
         try:
-            # Check for existing boxer with same name 
+            # Check for existing boxer with same name
             existing = Boxers.query.filter_by(name=name.strip()).first()
             if existing:
                 logger.error(f"Boxer already exists: {name}")
@@ -240,7 +244,9 @@ class Boxers(db.Model):
         try:
             boxer = cls.query.get(boxer_id)
             if not boxer:
-                logger.warning(f"Attempted to delete non-existent Boxer with ID {boxer_id}")
+                logger.warning(
+                    f"Attempted to delete non-existent Boxer with ID {boxer_id}"
+                )
                 raise ValueError(f"Boxer with ID {boxer_id} not found.")
 
             db.session.delete(boxer)

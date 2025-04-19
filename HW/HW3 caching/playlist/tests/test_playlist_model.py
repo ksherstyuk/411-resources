@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import pytest
 
 from playlist.models.playlist_model import PlaylistModel

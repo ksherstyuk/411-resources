@@ -229,7 +229,7 @@ class Movies(db.Model):
                 for movie in movies
             ]
 
-            logger.info(f"Retrieved {len(results)} movies from the watchlist")
+            logger.info(f"Retrieved {len(results)} movies from the catalog")
             return results
 
         except SQLAlchemyError as e:

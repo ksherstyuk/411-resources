@@ -102,7 +102,7 @@ class Movies(db.Model):
     @classmethod
     def delete_movie(cls, movie_id: int) -> None:
         """
-        Permanently deletes a movie from the catalog by ID.
+        Permanently deletes a movie from the watchlist by ID.
 
         Args:
             movie_id (int): The ID of the movie to delete.
@@ -193,7 +193,7 @@ class Movies(db.Model):
     @classmethod
     def get_all_movies(cls, sort_by_average_rating: bool = False) -> list[dict]:
         """
-        Retrieves all movies from the catalog as dictionaries.
+        Retrieves all movies from the watchlist as dictionaries.
 
         Args:
             sort_by_average_rating (bool): If True, sort the movies by rating in descending order.
@@ -204,7 +204,7 @@ class Movies(db.Model):
         Raises:
             SQLAlchemyError: If any database error occurs.
         """
-        logger.info("Attempting to retrieve all movies from the catalog")
+        logger.info("Attempting to retrieve all movies from the watchlist")
 
         try:
             query = cls.query
@@ -214,7 +214,7 @@ class Movies(db.Model):
             movies = query.all()
 
             if not movies:
-                logger.warning("The movie catalog is empty.")
+                logger.warning("The movie watchlist is empty.")
                 return []
 
             results = [
@@ -229,7 +229,7 @@ class Movies(db.Model):
                 for movie in movies
             ]
 
-            logger.info(f"Retrieved {len(results)} movies from the catalog")
+            logger.info(f"Retrieved {len(results)} movies from the watchlist")
             return results
 
         except SQLAlchemyError as e:

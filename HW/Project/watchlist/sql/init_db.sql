@@ -1,15 +1,14 @@
-DROP TABLE IF EXISTS songs;
-CREATE TABLE songs (
+DROP TABLE IF EXISTS movies;
+CREATE TABLE movies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    artist TEXT NOT NULL,
     title TEXT NOT NULL,
-    year INTEGER NOT NULL CHECK(year >= 1900),
-    genre TEXT NOT NULL,
-    duration INTEGER NOT NULL CHECK(duration > 0),
-    play_count INTEGER DEFAULT 0,
-    UNIQUE(artist, title, year)
+    release_year INTEGER NOT NULL CHECK(release_year >= 1900),
+    popularity FLOAT NOT NULL,
+    runtime INTEGER NOT NULL CHECK(runtime > 0),
+    average_vote FLOAT NOT NULL CHECK(0 < average_vote < 10),
+    UNIQUE(title, release_year)
 );
 
-CREATE INDEX idx_songs_artist_title ON songs(artist, title);
-CREATE INDEX idx_songs_year ON songs(year);
-CREATE INDEX idx_songs_play_count ON songs(play_count);
+CREATE INDEX idx_movies_release_year_title ON movies(release_year, title);
+CREATE INDEX idx_movies_popularity ON movies(popularity);
+CREATE INDEX idx_movies_average_vote ON movies(average_vote);

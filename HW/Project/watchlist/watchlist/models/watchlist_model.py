@@ -1,11 +1,13 @@
 import logging
 import os
 import time
+import requests
 from typing import List
 
-from watchlist.models.movie_model import Movies
-from watchlist.utils.api_utils import get_random
-from watchlist.utils.logger import configure_logger
+
+from .movie_model import Movies
+from ..utils.api_utils import get_random, api_get_movie_by_title
+from ..utils.logger import configure_logger
 
 logger = logging.getLogger(__name__)
 configure_logger(logger)
@@ -18,19 +20,18 @@ class WatchlistModel:
     """
 
     def __init__(self):
-        """Initializes the WatchlistModel with an empty watchlist. 
+        """Initializes the WatchlistModel with an empty watchlist.
 
         The watchlist is a list of Movies (that the user wants to watch).
         The TTL (Time To Live) for movie caching is set to a default value from the environment variable "TTL",
         which defaults to 60 seconds if not set.
 
         """
-        #self.current_track_number = 1
+        # self.current_track_number = 1
         self.watchlist: List[int] = []
         self._movie_cache: dict[int, Movies] = {}
         self._ttl: dict[int, float] = {}
         self.ttl_seconds = int(os.getenv("TTL", 60))  # Default TTL is 60 seconds
-
 
     ##################################################
     # Movie Management Functions
@@ -60,10 +61,10 @@ class WatchlistModel:
 
         try:
             movie = Movies.get_movie_by_id(movie_id)
-            logger.info(f"Movie ID {movie_ID} loaded from DB")
+            logger.info(f"Movie ID {movie_id} loaded from DB")
         except ValueError as e:
-            logger.error(f"Movie ID {movie_ID} not found in DB: {e}")
-            raise ValueError(f"Movie ID {movie_ID} not found in database") from e
+            logger.error(f"Movie ID {movie_id} not found in DB: {e}")
+            raise ValueError(f"Movie ID {movie_id} not found in database") from e
 
         self._movie_cache[movie_id] = movie
         self._ttl[movie_id] = now + self.ttl_seconds
@@ -79,13 +80,17 @@ class WatchlistModel:
         Raises:
             ValueError: If the movie ID is invalid or already exists in the watchlist.
         """
-        logger.info(f"Received request to add movie with ID {movie_id} to the watchlist")
+        logger.info(
+            f"Received request to add movie with ID {movie_id} to the watchlist"
+        )
 
         movie_id = self.validate_movie_id(movie_id, check_in_watchlist=False)
 
         if movie_id in self.watchlist:
             logger.error(f"Movie with ID {movie_id} already exists in the watchlist")
-            raise ValueError(f"Movie with ID {movie_id} already exists in the watchlist")
+            raise ValueError(
+                f"Movie with ID {movie_id} already exists in the watchlist"
+            )
 
         try:
             movie = self._get_movie_from_cache_or_db(movie_id)
@@ -94,7 +99,25 @@ class WatchlistModel:
             raise
 
         self.watchlist.append(movie.id)
-        logger.info(f"Successfully added to watchlist: {movie.title} ({movie.release_year})")
+        logger.info(
+            f"Successfully added to watchlist: {movie.title} ({movie.release_year})"
+        )
+
+    def add_movie_to_watchlist_by_name(self, movie_name: str) -> None:
+        """
+        Adds a movie to the watchlist by name, by querying the TMDB Api.
+
+        Args:
+            movie_name (str): The name of the movie to add to the watchlist.
+
+        Raises:
+            ValueError if non-string title is entered or movie title is not found in TMDB database.
+        """
+        raw_movie_data = api_get_movie_by_title(movie_name)
+
+        # create instance in the database now -- more logic necessary... do i use the cls thing?
+
+
 
 
     def remove_movie_by_movie_id(self, movie_id: int) -> None:
@@ -119,7 +142,6 @@ class WatchlistModel:
         self.watchlist.remove(movie_id)
         logger.info(f"Successfully removed movie with ID {movie_id} from the watchlist")
 
-
     def clear_watchlist(self) -> None:
         """Clears all movies from the watchlist.
 
@@ -137,11 +159,9 @@ class WatchlistModel:
         self.watchlist.clear()
         logger.info("Successfully cleared the watchlist")
 
-
     ##################################################
     # Watchlist Retrieval Functions
     ##################################################
-
 
     def get_all_movies(self) -> List[Movies]:
         """Returns a list of all movies in the watchlist using cached movie data.
@@ -154,8 +174,9 @@ class WatchlistModel:
         """
         self.check_if_empty()
         logger.info("Retrieving all movies in the watchlist")
-        return [self._get_movie_from_cache_or_db(movie_id) for movie_id in self.watchlist]
-
+        return [
+            self._get_movie_from_cache_or_db(movie_id) for movie_id in self.watchlist
+        ]
 
     def get_movie_by_movie_id(self, movie_id: int) -> Movies:
         """Retrieves a movie from the playlist by its movie ID using the cache or DB.
@@ -173,7 +194,9 @@ class WatchlistModel:
         movie_id = self.validate_movie_id(movie_id)
         logger.info(f"Retrieving movie with ID {movie_id} from the watchlist")
         movie = self._get_movie_from_cache_or_db(movie_id)
-        logger.info(f"Successfully retrieved movie: {movie.title} ({movie.release_year})")
+        logger.info(
+            f"Successfully retrieved movie: {movie.title} ({movie.release_year})"
+        )
         return movie
 
     def get_movie_by_title(self, title: str) -> Movies:
@@ -192,10 +215,10 @@ class WatchlistModel:
         movie_id = self.validate_movie_id(movie_id)
         logger.info(f"Retrieving movie with ID {movie_id} from the watchlist")
         movie = self._get_movie_from_cache_or_db(movie_id)
-        logger.info(f"Successfully retrieved movie: {movie.title} ({movie.release_year})")
+        logger.info(
+            f"Successfully retrieved movie: {movie.title} ({movie.release_year})"
+        )
         return movie
-
-
 
     def get_watchlist_length(self) -> int:
         """Returns the number of movies in the watchlist.
@@ -208,8 +231,7 @@ class WatchlistModel:
         logger.info(f"Retrieving watchlist length: {length} movies")
         return length
 
-
-    def get_random_movie_from_watchlist(self) -> None:
+    def get_random_movie_from_watchlist(self):
         """Returns a randomly-selected movie from the watchlist.
 
         Returns:
@@ -222,18 +244,19 @@ class WatchlistModel:
         self.check_if_empty()
 
         # Get a random index using the random.org API
-        movie_ID = get_random(self.get_watchlist_length()) ## CHECK THIS LOGIC?????????
-        logger.info(f"Retrieving randomly-selected movie with ID {movie_id} from the watchlist")
+        movie_id = get_random(self.get_watchlist_length())  ## CHECK THIS LOGIC?????????
+        logger.info(
+            f"Retrieving randomly-selected movie with ID {movie_id} from the watchlist"
+        )
         movie = self._get_movie_from_cache_or_db(movie_id)
-        logger.info(f"Successfully retrieved random movie from watchlist: {movie.title} ({movie.release_year})")
+        logger.info(
+            f"Successfully retrieved random movie from watchlist: {movie.title} ({movie.release_year})"
+        )
         return movie
-
-
 
     ##################################################
     # Utility Functions
     ##################################################
-
 
     ####################################################################################################
     #
@@ -278,7 +301,6 @@ class WatchlistModel:
             raise ValueError(f"Movie with id {movie_id} not found in database")
 
         return movie_id
-
 
     def check_if_empty(self) -> None:
         """

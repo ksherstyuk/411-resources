@@ -1,6 +1,7 @@
 import logging
 import os
 import requests
+from dotenv import load_dotenv
 
 #PLAYLIST VERSION // NOT EDITED
 
@@ -78,6 +79,21 @@ def validate_string(value) -> bool:
     else:
         return False
 
+def get_api_key() -> str:
+    """
+    Gets the api-key for TMDB database from a .env file and returns it.
+
+    Returns:
+        API_KEY (str): The api-key if found in the .env file.
+
+    Raises:
+        RuntimeError: If there is no set API_KEY value or no .env file.
+    """
+    load_dotenv()
+    API_KEY = os.getenv("API_KEY")
+    if not API_KEY:
+        raise RuntimeError("API_KEY for TMDB not set in environment")
+    return API_KEY
 
 def api_get_movie_by_title(title: str):
     """
@@ -106,7 +122,7 @@ def api_get_movie_by_title(title: str):
 
     headers = {
         "accept": "application/json",
-        "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJmNGIyMWM3NGFlZjNjNGFjZjlhNTI2YzMxNjgwZjI3MCIsIm5iZiI6MTc0NTUzNzE5Ni41OTM5OTk5LCJzdWIiOiI2ODBhYzhhY2YzY2Y2ZDY2ZDc5ZDJiNzYiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.gv0w_3Y-CIfzbmu3KP1CnmcZYlTCHKR_nRfi_GJGcjM",
+        "Authorization": f"Bearer {get_api_key()}"
     }
 
     response = requests.get(url, params=params, headers=headers)

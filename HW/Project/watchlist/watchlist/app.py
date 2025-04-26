@@ -542,29 +542,28 @@ def create_app(config_class=ProductionConfig) -> Flask:
     ############################################################
 
 
-    @app.route('/api/add-song-to-playlist', methods=['POST'])
+    @app.route('/api/add-movie-to-watchlist', methods=['POST'])
     @login_required
-    def add_song_to_playlist() -> Response:
-        """Route to add a song to the playlist by compound key (artist, title, year).
+    def add_movie_to_watchlist() -> Response:
+        """Route to add a movie to the watchlist by title and release year.
 
         Expected JSON Input:
-            - artist (str): The artist's name.
-            - title (str): The song title.
-            - year (int): The year the song was released.
+            - title (str): The movie title.
+            - release year (int): The year the movie was released
 
         Returns:
             JSON response indicating success of the addition.
 
         Raises:
-            400 error if required fields are missing or the song does not exist.
-            500 error if there is an issue adding the song to the playlist.
+            400 error if required fields are missing or the movie does not exist.
+            500 error if there is an issue adding the movie to the watchlist.
 
         """
         try:
-            app.logger.info("Received request to add song to playlist")
+            app.logger.info("Received request to add movie to watchlist")
 
             data = request.get_json()
-            required_fields = ["artist", "title", "year"]
+            required_fields = ["title", "release_year"]
             missing_fields = [field for field in required_fields if field not in data]
 
             if missing_fields:
@@ -574,54 +573,52 @@ def create_app(config_class=ProductionConfig) -> Flask:
                     "message": f"Missing required fields: {', '.join(missing_fields)}"
                 }), 400)
 
-            artist = data["artist"]
             title = data["title"]
 
             try:
-                year = int(data["year"])
+                release_year = int(data["release_year"])
             except ValueError:
-                app.logger.warning(f"Invalid year format: {data['year']}")
+                app.logger.warning(f"Invalid year format: {data['release_year']}")
                 return make_response(jsonify({
                     "status": "error",
                     "message": "Year must be a valid integer"
                 }), 400)
 
-            app.logger.info(f"Looking up song: {artist} - {title} ({year})")
-            song = Songs.get_song_by_compound_key(artist, title, year)
+            app.logger.info(f"Looking up movie: {title} ({year})")
+            movie = Movies.get_movie_by_title(title)
 
-            if not song:
-                app.logger.warning(f"Song not found: {artist} - {title} ({year})")
+            if not movie:
+                app.logger.warning(f"Movie not found: {title} ({year})")
                 return make_response(jsonify({
                     "status": "error",
-                    "message": f"Song '{title}' by {artist} ({year}) not found in catalog"
+                    "message": f"Movie called '{title}' ({year}) not found in catalog"
                 }), 400)
 
-            playlist_model.add_song_to_playlist(song)
-            app.logger.info(f"Successfully added song to playlist: {artist} - {title} ({year})")
+            watchlist_model.add_movie_to_watchlist(movie)
+            app.logger.info(f"Successfully added movie to watchlist: {title} ({year})")
 
             return make_response(jsonify({
                 "status": "success",
-                "message": f"Song '{title}' by {artist} ({year}) added to playlist"
+                "message": f"Movie called '{title}' ({year}) added to watchlist"
             }), 201)
 
         except Exception as e:
-            app.logger.error(f"Failed to add song to playlist: {e}")
+            app.logger.error(f"Failed to add movie to watchlist: {e}")
             return make_response(jsonify({
                 "status": "error",
-                "message": "An internal error occurred while adding the song to the playlist",
+                "message": "An internal error occurred while adding the movie to the watchlist",
                 "details": str(e)
             }), 500)
 
 
-    @app.route('/api/remove-song-from-playlist', methods=['DELETE'])
+    @app.route('/api/remove-movie-from-watchlist', methods=['DELETE'])
     @login_required
-    def remove_song_by_song_id() -> Response:
-        """Route to remove a song from the playlist by compound key (artist, title, year).
+    def remove_movie_by_movie_id() -> Response:
+        """Route to remove a song from the playlist by title, year
 
         Expected JSON Input:
-            - artist (str): The artist's name.
-            - title (str): The song title.
-            - year (int): The year the song was released.
+            - title (str): The movie title.
+            - release year (int): The year the movie was released
 
         Returns:
             JSON response indicating success of the removal.
@@ -632,10 +629,10 @@ def create_app(config_class=ProductionConfig) -> Flask:
 
         """
         try:
-            app.logger.info("Received request to remove song from playlist")
+            app.logger.info("Received request to remove movie from watchlist")
 
             data = request.get_json()
-            required_fields = ["artist", "title", "year"]
+            required_fields = ["title", "release_year"]
             missing_fields = [field for field in required_fields if field not in data]
 
             if missing_fields:
@@ -645,34 +642,33 @@ def create_app(config_class=ProductionConfig) -> Flask:
                     "message": f"Missing required fields: {', '.join(missing_fields)}"
                 }), 400)
 
-            artist = data["artist"]
             title = data["title"]
 
             try:
-                year = int(data["year"])
+                release_year = int(data["release_year"])
             except ValueError:
-                app.logger.warning(f"Invalid year format: {data['year']}")
+                app.logger.warning(f"Invalid year format: {data['release_year']}")
                 return make_response(jsonify({
                     "status": "error",
                     "message": "Year must be a valid integer"
                 }), 400)
 
-            app.logger.info(f"Looking up song to remove: {artist} - {title} ({year})")
-            song = Songs.get_song_by_compound_key(artist, title, year)
+            app.logger.info(f"Looking up movie to remove: {title} ({release_year})")
+            movie = Movies.get_movie_by_title(title)
 
-            if not song:
-                app.logger.warning(f"Song not found in catalog: {artist} - {title} ({year})")
+            if not movie:
+                app.logger.warning(f"Movie not found in catalog: {title} ({release_year})")
                 return make_response(jsonify({
                     "status": "error",
-                    "message": f"Song '{title}' by {artist} ({year}) not found in catalog"
+                    "message": f"Movie called '{title}' not found in catalog"
                 }), 400)
 
-            playlist_model.remove_song_by_song_id(song.id)
-            app.logger.info(f"Successfully removed song from playlist: {artist} - {title} ({year})")
+            watchlist_model.remove_movie_by_movie_id(movie.id)
+            app.logger.info(f"Successfully removed movie from watchlist: {title} ({release_year})")
 
             return make_response(jsonify({
                 "status": "success",
-                "message": f"Song '{title}' by {artist} ({year}) removed from playlist"
+                "message": f"Movie called '{title}' ({release_year}) removed from playlist"
             }), 200)
 
         except Exception as e:
@@ -684,402 +680,89 @@ def create_app(config_class=ProductionConfig) -> Flask:
             }), 500)
 
 
-    @app.route('/api/remove-song-from-playlist-by-track-number/<int:track_number>', methods=['DELETE'])
+    @app.route('/api/clear-watchlist', methods=['POST'])
     @login_required
-    def remove_song_by_track_number(track_number: int) -> Response:
-        """Route to remove a song from the playlist by track number.
+    def clear_watchlist() -> Response:
+        """Route to clear all movies from the watchlist.
+
+        Returns:
+            JSON response indicating success of the operation.
+
+        Raises:
+            500 error if there is an issue clearing the watchlist.
+
+        """
+        try:
+            app.logger.info("Received request to clear the watchlist")
+
+            watchlist_model.clear_watchlist()
+
+            app.logger.info("Successfully cleared the watchlist")
+            return make_response(jsonify({
+                "status": "success",
+                "message": "Watchlist cleared"
+            }), 200)
+
+        except Exception as e:
+            app.logger.error(f"Failed to clear watchlist: {e}")
+            return make_response(jsonify({
+                "status": "error",
+                "message": "An internal error occurred while clearing the watchlist",
+                "details": str(e)
+            }), 500)
+
+
+
+
+    ############################################################
+    #
+    # View Watchlist
+    #
+    ############################################################
+
+
+    @app.route('/api/get-all-movies-from-watchlist', methods=['GET'])
+    @login_required
+    def get_all_movies_from_watchlist() -> Response:
+        """Retrieve all movies in the watchlist.
+
+        Returns:
+            JSON response containing the list of movies.
+
+        Raises:
+            500 error if there is an issue retrieving the watchlist.
+
+        """
+        try:
+            app.logger.info("Received request to retrieve all movies from the watchlist.")
+
+            movies = watchlist_model.get_all_movies()
+
+            app.logger.info(f"Successfully retrieved {len(movies)} movies from the playlist.")
+            return make_response(jsonify({
+                "status": "success",
+                "movies": movies
+            }), 200)
+
+        except Exception as e:
+            app.logger.error(f"Failed to retrieve movies from watchlist: {e}")
+            return make_response(jsonify({
+                "status": "error",
+                "message": "An internal error occurred while retrieving the watchlist",
+                "details": str(e)
+            }), 500)
+
+
+    @app.route('/api/get-movie-from-watchlist-by-title/<str:title>', methods=['GET'])
+    @login_required
+    def get_movie_by_title(title: str) -> Response:
+        """Retrieve a song from the playlist by its title.
 
         Path Parameter:
-            - track_number (int): The track number of the song to remove.
+            - title (str): The name of the movie.
 
         Returns:
-            JSON response indicating success of the removal.
-
-        Raises:
-            404 error if the track number does not exist.
-            500 error if there is an issue removing the song.
-
-        """
-        try:
-            app.logger.info(f"Received request to remove song at track number {track_number} from playlist")
-
-            playlist_model.remove_song_by_track_number(track_number)
-
-            app.logger.info(f"Successfully removed song at track number {track_number} from playlist")
-            return make_response(jsonify({
-                "status": "success",
-                "message": f"Song at track number {track_number} removed from playlist"
-            }), 200)
-
-        except ValueError as e:
-            app.logger.warning(f"Track number {track_number} not found in playlist: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": f"Track number {track_number} not found in playlist"
-            }), 404)
-
-        except Exception as e:
-            app.logger.error(f"Failed to remove song at track number {track_number}: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while removing the song from the playlist",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/clear-playlist', methods=['POST'])
-    @login_required
-    def clear_playlist() -> Response:
-        """Route to clear all songs from the playlist.
-
-        Returns:
-            JSON response indicating success of the operation.
-
-        Raises:
-            500 error if there is an issue clearing the playlist.
-
-        """
-        try:
-            app.logger.info("Received request to clear the playlist")
-
-            playlist_model.clear_playlist()
-
-            app.logger.info("Successfully cleared the playlist")
-            return make_response(jsonify({
-                "status": "success",
-                "message": "Playlist cleared"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to clear playlist: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while clearing the playlist",
-                "details": str(e)
-            }), 500)
-
-
-    ############################################################
-    #
-    # Play Playlist
-    #
-    ############################################################
-
-
-    @app.route('/api/play-current-song', methods=['POST'])
-    @login_required
-    def play_current_song() -> Response:
-        """Route to play the current song in the playlist.
-
-        Returns:
-            JSON response indicating success of the operation.
-
-        Raises:
-            404 error if there is no current song.
-            500 error if there is an issue playing the current song.
-
-        """
-        try:
-            app.logger.info("Received request to play the current song")
-
-            current_song = playlist_model.get_current_song()
-            if not current_song:
-                app.logger.warning("No current song found in the playlist")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "No current song found in the playlist"
-                }), 404)
-
-            playlist_model.play_current_song()
-            app.logger.info(f"Now playing: {current_song.artist} - {current_song.title} ({current_song.year})")
-
-            return make_response(jsonify({
-                "status": "success",
-                "message": "Now playing current song",
-                "song": {
-                    "id": current_song.id,
-                    "artist": current_song.artist,
-                    "title": current_song.title,
-                    "year": current_song.year,
-                    "genre": current_song.genre,
-                    "duration": current_song.duration
-                }
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to play current song: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while playing the current song",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/play-entire-playlist', methods=['POST'])
-    @login_required
-    def play_entire_playlist() -> Response:
-        """Route to play all songs in the playlist.
-
-        Returns:
-            JSON response indicating success of the operation.
-
-        Raises:
-            400 error if the playlist is empty.
-            500 error if there is an issue playing the playlist.
-
-        """
-        try:
-            app.logger.info("Received request to play the entire playlist")
-
-            if playlist_model.check_if_empty():
-                app.logger.warning("Cannot play playlist: No songs available")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "Cannot play playlist: No songs available"
-                }), 400)
-
-            playlist_model.play_entire_playlist()
-            app.logger.info("Playing entire playlist")
-
-            return make_response(jsonify({
-                "status": "success",
-                "message": "Playing entire playlist"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to play entire playlist: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while playing the playlist",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/play-rest-of-playlist', methods=['POST'])
-    @login_required
-    def play_rest_of_playlist() -> Response:
-        """Route to play the rest of the playlist from the current track.
-
-        Returns:
-            JSON response indicating success of the operation.
-
-        Raises:
-            400 error if the playlist is empty or if no current song is playing.
-            500 error if there is an issue playing the rest of the playlist.
-
-        """
-        try:
-            app.logger.info("Received request to play the rest of the playlist")
-
-            if playlist_model.check_if_empty():
-                app.logger.warning("Cannot play rest of playlist: No songs available")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "Cannot play rest of playlist: No songs available"
-                }), 400)
-
-            if not playlist_model.get_current_song():
-                app.logger.warning("No current song playing. Cannot continue playlist.")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "No current song playing. Cannot continue playlist."
-                }), 400)
-
-            playlist_model.play_rest_of_playlist()
-            app.logger.info("Playing rest of the playlist")
-
-            return make_response(jsonify({
-                "status": "success",
-                "message": "Playing rest of the playlist"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to play rest of the playlist: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while playing the rest of the playlist",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/rewind-playlist', methods=['POST'])
-    @login_required
-    def rewind_playlist() -> Response:
-        """Route to rewind the playlist to the first song.
-
-        Returns:
-            JSON response indicating success of the operation.
-
-        Raises:
-            400 error if the playlist is empty.
-            500 error if there is an issue rewinding the playlist.
-
-        """
-        try:
-            app.logger.info("Received request to rewind the playlist")
-
-            if playlist_model.check_if_empty():
-                app.logger.warning("Cannot rewind: No songs in playlist")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "Cannot rewind: No songs in playlist"
-                }), 400)
-
-            playlist_model.rewind_playlist()
-            app.logger.info("Playlist successfully rewound to the first song")
-
-            return make_response(jsonify({
-                "status": "success",
-                "message": "Playlist rewound to the first song"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to rewind playlist: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while rewinding the playlist",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/go-to-track-number/<int:track_number>', methods=['POST'])
-    @login_required
-    def go_to_track_number(track_number: int) -> Response:
-        """Route to set the playlist to start playing from a specific track number.
-
-        Path Parameter:
-            - track_number (int): The track number to set as the current song.
-
-        Returns:
-            JSON response indicating success or an error message.
-
-        Raises:
-            400 error if the track number is invalid.
-            500 error if there is an issue updating the track number.
-        """
-        try:
-            app.logger.info(f"Received request to go to track number {track_number}")
-
-            if not playlist_model.is_valid_track_number(track_number):
-                app.logger.warning(f"Invalid track number: {track_number}")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": f"Invalid track number: {track_number}. Please provide a valid track number."
-                }), 400)
-
-            playlist_model.go_to_track_number(track_number)
-            app.logger.info(f"Playlist set to track number {track_number}")
-
-            return make_response(jsonify({
-                "status": "success",
-                "message": f"Now playing from track number {track_number}"
-            }), 200)
-
-        except ValueError as e:
-            app.logger.warning(f"Failed to set track number {track_number}: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 400)
-
-        except Exception as e:
-            app.logger.error(f"Internal error while going to track number {track_number}: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while changing the track number",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/go-to-random-track', methods=['POST'])
-    @login_required
-    def go_to_random_track() -> Response:
-        """Route to set the playlist to start playing from a random track number.
-
-        Returns:
-            JSON response indicating success or an error message.
-
-        Raises:
-            400 error if the playlist is empty.
-            500 error if there is an issue selecting a random track.
-
-        """
-        try:
-            app.logger.info("Received request to go to a random track")
-
-            if playlist_model.get_playlist_length() == 0:
-                app.logger.warning("Attempted to go to a random track but the playlist is empty")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "Cannot select a random track. The playlist is empty."
-                }), 400)
-
-            playlist_model.go_to_random_track()
-            app.logger.info(f"Playlist set to random track number {playlist_model.current_track_number}")
-
-            return make_response(jsonify({
-                "status": "success",
-                "message": f"Now playing from random track number {playlist_model.current_track_number}"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Internal error while selecting a random track: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while selecting a random track",
-                "details": str(e)
-            }), 500)
-
-
-    ############################################################
-    #
-    # View Playlist
-    #
-    ############################################################
-
-
-    @app.route('/api/get-all-songs-from-playlist', methods=['GET'])
-    @login_required
-    def get_all_songs_from_playlist() -> Response:
-        """Retrieve all songs in the playlist.
-
-        Returns:
-            JSON response containing the list of songs.
-
-        Raises:
-            500 error if there is an issue retrieving the playlist.
-
-        """
-        try:
-            app.logger.info("Received request to retrieve all songs from the playlist.")
-
-            songs = playlist_model.get_all_songs()
-
-            app.logger.info(f"Successfully retrieved {len(songs)} songs from the playlist.")
-            return make_response(jsonify({
-                "status": "success",
-                "songs": songs
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to retrieve songs from playlist: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while retrieving the playlist",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/get-song-from-playlist-by-track-number/<int:track_number>', methods=['GET'])
-    @login_required
-    def get_song_by_track_number(track_number: int) -> Response:
-        """Retrieve a song from the playlist by track number.
-
-        Path Parameter:
-            - track_number (int): The track number of the song.
-
-        Returns:
-            JSON response containing song details.
+            JSON response containing movie details.
 
         Raises:
             404 error if the track number is not found.
@@ -1087,308 +770,60 @@ def create_app(config_class=ProductionConfig) -> Flask:
 
         """
         try:
-            app.logger.info(f"Received request to retrieve song at track number {track_number}.")
+            app.logger.info(f"Received request to retrieve movie called '{title}'")
 
-            song = playlist_model.get_song_by_track_number(track_number)
+            movie = watchlist_model.get_movie_by_title(title)
 
-            app.logger.info(f"Successfully retrieved song: {song.artist} - {song.title} (Track {track_number}).")
+            app.logger.info(f"Successfully retrieved movie: {song.title} ({song.release_year})")
             return make_response(jsonify({
                 "status": "success",
-                "song": song
+                "movie": movie
             }), 200)
 
         except ValueError as e:
-            app.logger.warning(f"Track number {track_number} not found: {e}")
+            app.logger.warning(f"Movie called '{title}' not found: {e}")
             return make_response(jsonify({
                 "status": "error",
                 "message": str(e)
             }), 404)
 
         except Exception as e:
-            app.logger.error(f"Failed to retrieve song by track number {track_number}: {e}")
+            app.logger.error(f"Failed to retrieve movie called '{track_number}': {e}")
             return make_response(jsonify({
                 "status": "error",
-                "message": "An internal error occurred while retrieving the song",
+                "message": "An internal error occurred while retrieving the movie",
                 "details": str(e)
             }), 500)
 
 
-    @app.route('/api/get-current-song', methods=['GET'])
+    @app.route('/api/get-watchlist-length', methods=['GET'])
     @login_required
-    def get_current_song() -> Response:
-        """Retrieve the current song being played.
+    def get_watchlist_length() -> Response:
+        """Retrieve the length (number of movies) of the watchlist.
 
         Returns:
-            JSON response containing current song details.
+            JSON response containing the watchlist length.
 
         Raises:
-            500 error if there is an issue retrieving the current song.
+            500 error if there is an issue retrieving watchlist information.
 
         """
         try:
-            app.logger.info("Received request to retrieve the current song.")
+            app.logger.info("Received request to retrieve watchlist length.")
 
-            current_song = playlist_model.get_current_song()
+            watchlist_length = playlist_model.get_watchlist_length()
 
-            app.logger.info(f"Successfully retrieved current song: {current_song.artist} - {current_song.title}.")
+            app.logger.info(f"Playlist contains {playlist_length} movies.")
             return make_response(jsonify({
                 "status": "success",
-                "current_song": current_song
+                "watchlist_length": watchlist_length
             }), 200)
 
         except Exception as e:
-            app.logger.error(f"Failed to retrieve current song: {e}")
+            app.logger.error(f"Failed to retrieve watchlist length: {e}")
             return make_response(jsonify({
                 "status": "error",
-                "message": "An internal error occurred while retrieving the current song",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/get-playlist-length-duration', methods=['GET'])
-    @login_required
-    def get_playlist_length_and_duration() -> Response:
-        """Retrieve the length (number of songs) and total duration of the playlist.
-
-        Returns:
-            JSON response containing the playlist length and total duration.
-
-        Raises:
-            500 error if there is an issue retrieving playlist information.
-
-        """
-        try:
-            app.logger.info("Received request to retrieve playlist length and duration.")
-
-            playlist_length = playlist_model.get_playlist_length()
-            playlist_duration = playlist_model.get_playlist_duration()
-
-            app.logger.info(f"Playlist contains {playlist_length} songs with a total duration of {playlist_duration} seconds.")
-            return make_response(jsonify({
-                "status": "success",
-                "playlist_length": playlist_length,
-                "playlist_duration": playlist_duration
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to retrieve playlist length and duration: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while retrieving playlist details",
-                "details": str(e)
-            }), 500)
-
-
-    ############################################################
-    #
-    # Arrange Playlist
-    #
-    ############################################################
-
-
-    @app.route('/api/move-song-to-beginning', methods=['POST'])
-    @login_required
-    def move_song_to_beginning() -> Response:
-        """Move a song to the beginning of the playlist.
-
-        Expected JSON Input:
-            - artist (str): The artist of the song.
-            - title (str): The title of the song.
-            - year (int): The year the song was released.
-
-        Returns:
-            Response: JSON response indicating success or an error message.
-
-        Raises:
-            400 error if required fields are missing.
-            500 error if an error occurs while updating the playlist.
-
-        """
-        try:
-            data = request.get_json()
-
-            required_fields = ["artist", "title", "year"]
-            missing_fields = [field for field in required_fields if field not in data]
-
-            if missing_fields:
-                app.logger.warning(f"Missing required fields: {missing_fields}")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": f"Missing required fields: {', '.join(missing_fields)}"
-                }), 400)
-
-            artist, title, year = data["artist"], data["title"], data["year"]
-            app.logger.info(f"Received request to move song to beginning: {artist} - {title} ({year})")
-
-            song = Songs.get_song_by_compound_key(artist, title, year)
-            playlist_model.move_song_to_beginning(song.id)
-
-            app.logger.info(f"Successfully moved song to beginning: {artist} - {title} ({year})")
-            return make_response(jsonify({
-                "status": "success",
-                "message": f"Song '{title}' by {artist} moved to beginning"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to move song to beginning: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while moving the song",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/move-song-to-end', methods=['POST'])
-    @login_required
-    def move_song_to_end() -> Response:
-        """Move a song to the end of the playlist.
-
-        Expected JSON Input:
-            - artist (str): The artist of the song.
-            - title (str): The title of the song.
-            - year (int): The year the song was released.
-
-        Returns:
-            Response: JSON response indicating success or an error message.
-
-        Raises:
-            400 error if required fields are missing.
-            500 if an error occurs while updating the playlist.
-
-        """
-        try:
-            data = request.get_json()
-
-            required_fields = ["artist", "title", "year"]
-            missing_fields = [field for field in required_fields if field not in data]
-
-            if missing_fields:
-                app.logger.warning(f"Missing required fields: {missing_fields}")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": f"Missing required fields: {', '.join(missing_fields)}"
-                }), 400)
-
-            artist, title, year = data["artist"], data["title"], data["year"]
-            app.logger.info(f"Received request to move song to end: {artist} - {title} ({year})")
-
-            song = Songs.get_song_by_compound_key(artist, title, year)
-            playlist_model.move_song_to_end(song.id)
-
-            app.logger.info(f"Successfully moved song to end: {artist} - {title} ({year})")
-            return make_response(jsonify({
-                "status": "success",
-                "message": f"Song '{title}' by {artist} moved to end"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to move song to end: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while moving the song",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/move-song-to-track-number', methods=['POST'])
-    @login_required
-    def move_song_to_track_number() -> Response:
-        """Move a song to a specific track number in the playlist.
-
-        Expected JSON Input:
-            - artist (str): The artist of the song.
-            - title (str): The title of the song.
-            - year (int): The year the song was released.
-            - track_number (int): The new track number to move the song to.
-
-        Returns:
-            Response: JSON response indicating success or an error message.
-
-        Raises:
-            400 error if required fields are missing.
-            500 error if an error occurs while updating the playlist.
-        """
-        try:
-            data = request.get_json()
-
-            required_fields = ["artist", "title", "year", "track_number"]
-            missing_fields = [field for field in required_fields if field not in data]
-
-            if missing_fields:
-                app.logger.warning(f"Missing required fields: {missing_fields}")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": f"Missing required fields: {', '.join(missing_fields)}"
-                }), 400)
-
-            artist, title, year, track_number = data["artist"], data["title"], data["year"], data["track_number"]
-            app.logger.info(f"Received request to move song to track number {track_number}: {artist} - {title} ({year})")
-
-            song = Songs.get_song_by_compound_key(artist, title, year)
-            playlist_model.move_song_to_track_number(song.id, track_number)
-
-            app.logger.info(f"Successfully moved song to track {track_number}: {artist} - {title} ({year})")
-            return make_response(jsonify({
-                "status": "success",
-                "message": f"Song '{title}' by {artist} moved to track {track_number}"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to move song to track number: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while moving the song",
-                "details": str(e)
-            }), 500)
-
-
-    @app.route('/api/swap-songs-in-playlist', methods=['POST'])
-    @login_required
-    def swap_songs_in_playlist() -> Response:
-        """Swap two songs in the playlist by their track numbers.
-
-        Expected JSON Input:
-            - track_number_1 (int): The track number of the first song.
-            - track_number_2 (int): The track number of the second song.
-
-        Returns:
-            Response: JSON response indicating success or an error message.
-
-        Raises:
-            400 error if required fields are missing.
-            500 error if an error occurs while swapping songs in the playlist.
-        """
-        try:
-            data = request.get_json()
-
-            required_fields = ["track_number_1", "track_number_2"]
-            missing_fields = [field for field in required_fields if field not in data]
-
-            if missing_fields:
-                app.logger.warning(f"Missing required fields: {missing_fields}")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": f"Missing required fields: {', '.join(missing_fields)}"
-                }), 400)
-
-            track_number_1, track_number_2 = data["track_number_1"], data["track_number_2"]
-            app.logger.info(f"Received request to swap songs at track numbers {track_number_1} and {track_number_2}")
-
-            song_1 = playlist_model.get_song_by_track_number(track_number_1)
-            song_2 = playlist_model.get_song_by_track_number(track_number_2)
-            playlist_model.swap_songs_in_playlist(song_1.id, song_2.id)
-
-            app.logger.info(f"Successfully swapped songs: {song_1.artist} - {song_1.title} <-> {song_2.artist} - {song_2.title}")
-            return make_response(jsonify({
-                "status": "success",
-                "message": f"Swapped songs: {song_1.artist} - {song_1.title} <-> {song_2.artist} - {song_2.title}"
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to swap songs in playlist: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while swapping songs",
+                "message": "An internal error occurred while retrieving watchlist details",
                 "details": str(e)
             }), 500)
 
@@ -1401,22 +836,22 @@ def create_app(config_class=ProductionConfig) -> Flask:
     ############################################################
 
 
-    @app.route('/api/song-leaderboard', methods=['GET'])
-    def get_song_leaderboard() -> Response:
+    @app.route('/api/movie-rating-leaderboard', methods=['GET'])
+    def get_movie_leaderboard() -> Response:
         """
-        Route to retrieve a leaderboard of songs sorted by play count.
+        Route to retrieve a leaderboard of movies sorted by rating.
 
         Returns:
-            JSON response with a sorted leaderboard of songs.
+            JSON response with a sorted leaderboard of movies (by rating).
 
         Raises:
             500 error if there is an issue generating the leaderboard.
 
         """
         try:
-            app.logger.info("Received request to generate song leaderboard")
+            app.logger.info("Received request to generate movie leaderboard (by rating)")
 
-            leaderboard_data = Songs.get_all_songs(sort_by_play_count=True)
+            leaderboard_data = Movies.get_all_movies(sort_by_average_rating=True)
 
             app.logger.info(f"Successfully generated song leaderboard with {len(leaderboard_data)} entries")
             return make_response(jsonify({
@@ -1425,7 +860,7 @@ def create_app(config_class=ProductionConfig) -> Flask:
             }), 200)
 
         except Exception as e:
-            app.logger.error(f"Failed to generate song leaderboard: {e}")
+            app.logger.error(f"Failed to generate movie leaderboard: {e}")
             return make_response(jsonify({
                 "status": "error",
                 "message": "An internal error occurred while generating the leaderboard",

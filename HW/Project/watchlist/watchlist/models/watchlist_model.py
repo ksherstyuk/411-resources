@@ -176,6 +176,26 @@ class WatchlistModel:
         logger.info(f"Successfully retrieved movie: {movie.title} ({movie.release_year})")
         return movie
 
+    def get_movie_by_title(self, title: str) -> Movies:
+        """Retrieves a movie from the playlist by its title using the cache or DB.
+
+        Args:
+            title (str): The title of the movie to retrieve.
+
+        Returns:
+            Movie: The movie with the specified ID.
+
+        Raises:
+            ValueError: If the watchlist is empty or the movie is not found.
+        """
+        self.check_if_empty()
+        movie_id = self.validate_movie_id(movie_id)
+        logger.info(f"Retrieving movie with ID {movie_id} from the watchlist")
+        movie = self._get_movie_from_cache_or_db(movie_id)
+        logger.info(f"Successfully retrieved movie: {movie.title} ({movie.release_year})")
+        return movie
+
+
 
     def get_watchlist_length(self) -> int:
         """Returns the number of movies in the watchlist.

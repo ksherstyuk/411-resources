@@ -128,6 +128,7 @@ class Movies(db.Model):
             db.session.rollback()
             raise
 
+
     @classmethod
     def get_movie_by_id(cls, movie_id: int) -> "Movies":
         """

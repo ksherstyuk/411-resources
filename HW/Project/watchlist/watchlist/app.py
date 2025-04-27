@@ -303,11 +303,10 @@ def create_app(config_class=ProductionConfig) -> Flask:
     @app.route('/api/add-movie-to-watchlist', methods=['POST'])
     @login_required
     def add_movie_to_watchlist() -> Response:
-        """Route to add a movie to the watchlist by title and release year.
+        """Route to add a movie to the watchlist by title.
 
         Expected JSON Input:
             - title (str): The movie title.
-            - release year (int): The year the movie was released
 
         Returns:
             JSON response indicating success of the addition.
@@ -321,7 +320,7 @@ def create_app(config_class=ProductionConfig) -> Flask:
             app.logger.info("Received request to add movie to watchlist")
 
             data = request.get_json()
-            required_fields = ["title", "release_year"]
+            required_fields = ["title"]
             missing_fields = [field for field in required_fields if field not in data]
 
             if missing_fields:
@@ -333,31 +332,22 @@ def create_app(config_class=ProductionConfig) -> Flask:
 
             title = data["title"]
 
-            try:
-                release_year = int(data["release_year"])
-            except ValueError:
-                app.logger.warning(f"Invalid year format: {data['release_year']}")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "Year must be a valid integer"
-                }), 400)
-
-            app.logger.info(f"Looking up movie: {title} ({year})")
+            app.logger.info(f"Looking up movie: '{title}'")
             movie = Movies.get_movie_by_title(title)
 
             if not movie:
-                app.logger.warning(f"Movie not found: {title} ({year})")
+                app.logger.warning(f"Movie not found: '{title}'")
                 return make_response(jsonify({
                     "status": "error",
-                    "message": f"Movie called '{title}' ({year}) not found in catalog"
+                    "message": f"Movie called '{title}' not found in DB"
                 }), 400)
 
-            watchlist_model.add_movie_to_watchlist(movie)
-            app.logger.info(f"Successfully added movie to watchlist: {title} ({year})")
+            watchlist_model.add_movie_to_watchlist(movie) #or movie.title?
+            app.logger.info(f"Successfully added movie to watchlist: '{title}'")
 
             return make_response(jsonify({
                 "status": "success",
-                "message": f"Movie called '{title}' ({year}) added to watchlist"
+                "message": f"Movie called '{title}' added to watchlist"
             }), 201)
 
         except Exception as e:
@@ -371,12 +361,11 @@ def create_app(config_class=ProductionConfig) -> Flask:
 
     @app.route('/api/remove-movie-from-watchlist', methods=['DELETE'])
     @login_required
-    def remove_movie_by_movie_id() -> Response:
-        """Route to remove a song from the playlist by title, year
+    def remove_movie_by_title() -> Response:
+        """Route to remove a song from the playlist by title
 
         Expected JSON Input:
             - title (str): The movie title.
-            - release year (int): The year the movie was released
 
         Returns:
             JSON response indicating success of the removal.
@@ -390,7 +379,7 @@ def create_app(config_class=ProductionConfig) -> Flask:
             app.logger.info("Received request to remove movie from watchlist")
 
             data = request.get_json()
-            required_fields = ["title", "release_year"]
+            required_fields = ["title"]
             missing_fields = [field for field in required_fields if field not in data]
 
             if missing_fields:
@@ -402,38 +391,29 @@ def create_app(config_class=ProductionConfig) -> Flask:
 
             title = data["title"]
 
-            try:
-                release_year = int(data["release_year"])
-            except ValueError:
-                app.logger.warning(f"Invalid year format: {data['release_year']}")
-                return make_response(jsonify({
-                    "status": "error",
-                    "message": "Year must be a valid integer"
-                }), 400)
-
-            app.logger.info(f"Looking up movie to remove: {title} ({release_year})")
+            app.logger.info(f"Looking up movie to remove: '{title}'")
             movie = Movies.get_movie_by_title(title)
 
             if not movie:
-                app.logger.warning(f"Movie not found in catalog: {title} ({release_year})")
+                app.logger.warning(f"Movie not found in DB: '{title}'")
                 return make_response(jsonify({
                     "status": "error",
-                    "message": f"Movie called '{title}' not found in catalog"
+                    "message": f"Movie called '{title}' not found in DB"
                 }), 400)
 
-            watchlist_model.remove_movie_by_movie_id(movie.id)
-            app.logger.info(f"Successfully removed movie from watchlist: {title} ({release_year})")
+            watchlist_model.remove_movie_from_watchlist(movie) #or movie.title?
+            app.logger.info(f"Successfully removed movie from watchlist: '{title}')")
 
             return make_response(jsonify({
                 "status": "success",
-                "message": f"Movie called '{title}' ({release_year}) removed from playlist"
+                "message": f"Movie called '{title}') removed from playlist"
             }), 200)
 
         except Exception as e:
-            app.logger.error(f"Failed to remove song from playlist: {e}")
+            app.logger.error(f"Failed to remove movie from watchlist: {e}")
             return make_response(jsonify({
                 "status": "error",
-                "message": "An internal error occurred while removing the song from the playlist",
+                "message": "An internal error occurred while removing the movie from the watchlist",
                 "details": str(e)
             }), 500)
 
@@ -523,8 +503,8 @@ def create_app(config_class=ProductionConfig) -> Flask:
             JSON response containing movie details.
 
         Raises:
-            404 error if the track number is not found.
-            500 error if there is an issue retrieving the song.
+            404 error if the movie is not found.
+            500 error if there is an issue retrieving the movie.
 
         """
         try:
@@ -532,7 +512,7 @@ def create_app(config_class=ProductionConfig) -> Flask:
 
             movie = watchlist_model.get_movie_by_title(title)
 
-            app.logger.info(f"Successfully retrieved movie: {song.title} ({song.release_year})")
+            app.logger.info(f"Successfully retrieved movie: {movie.title} ({movie.release_year})")
             return make_response(jsonify({
                 "status": "success",
                 "movie": movie
@@ -546,7 +526,7 @@ def create_app(config_class=ProductionConfig) -> Flask:
             }), 404)
 
         except Exception as e:
-            app.logger.error(f"Failed to retrieve movie called '{track_number}': {e}")
+            app.logger.error(f"Failed to retrieve movie called '{title}': {e}")
             return make_response(jsonify({
                 "status": "error",
                 "message": "An internal error occurred while retrieving the movie",
@@ -569,9 +549,9 @@ def create_app(config_class=ProductionConfig) -> Flask:
         try:
             app.logger.info("Received request to retrieve watchlist length.")
 
-            watchlist_length = playlist_model.get_watchlist_length()
+            watchlist_length = watchlist_model.get_watchlist_length()
 
-            app.logger.info(f"Playlist contains {playlist_length} movies.")
+            app.logger.info(f"Watchlist contains {watchlist_length} movies.")
             return make_response(jsonify({
                 "status": "success",
                 "watchlist_length": watchlist_length
@@ -582,46 +562,6 @@ def create_app(config_class=ProductionConfig) -> Flask:
             return make_response(jsonify({
                 "status": "error",
                 "message": "An internal error occurred while retrieving watchlist details",
-                "details": str(e)
-            }), 500)
-
-
-
-    ############################################################
-    #
-    # Leaderboard / Stats
-    #
-    ############################################################
-
-
-    @app.route('/api/movie-rating-leaderboard', methods=['GET'])
-    def get_movie_leaderboard() -> Response:
-        """
-        Route to retrieve a leaderboard of movies sorted by rating.
-
-        Returns:
-            JSON response with a sorted leaderboard of movies (by rating).
-
-        Raises:
-            500 error if there is an issue generating the leaderboard.
-
-        """
-        try:
-            app.logger.info("Received request to generate movie leaderboard (by rating)")
-
-            leaderboard_data = Movies.get_all_movies(sort_by_average_rating=True)
-
-            app.logger.info(f"Successfully generated song leaderboard with {len(leaderboard_data)} entries")
-            return make_response(jsonify({
-                "status": "success",
-                "leaderboard": leaderboard_data
-            }), 200)
-
-        except Exception as e:
-            app.logger.error(f"Failed to generate movie leaderboard: {e}")
-            return make_response(jsonify({
-                "status": "error",
-                "message": "An internal error occurred while generating the leaderboard",
                 "details": str(e)
             }), 500)
 

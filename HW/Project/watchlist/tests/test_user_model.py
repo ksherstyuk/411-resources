@@ -1,6 +1,6 @@
 import pytest
 
-from playlist.models.user_model import Users
+from watchlist.models.user_model import Users
 
 
 @pytest.fixture

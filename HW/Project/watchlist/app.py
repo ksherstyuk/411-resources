@@ -5,7 +5,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from config import ProductionConfig
 
 from watchlist.db import db
-from watchlist.models.song_model import Movies
+from watchlist.models.movie_model import Movies
 from watchlist.models.watchlist_model import WatchlistModel
 from watchlist.models.user_model import Users
 from watchlist.utils.logger import configure_logger

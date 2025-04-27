@@ -1,6 +1,6 @@
 import pytest
 
-from playlist.models.song_model import Songs
+from watchlist.models.movie_model import Movies
 
 
 # --- Fixtures ---

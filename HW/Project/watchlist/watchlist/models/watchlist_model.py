@@ -23,29 +23,21 @@ class WatchlistModel:
         """Initializes the WatchlistModel with an empty watchlist.
 
         The watchlist is a list of Movies (that the user wants to watch).
-        The TTL (Time To Live) for movie caching is set to a default value from the environment variable "TTL",
-        which defaults to 60 seconds if not set.
 
         """
-        # self.current_track_number = 1
         self.watchlist: List[int] = []
-        self._movie_cache: dict[int, Movies] = {}
-        self._ttl: dict[int, float] = {}
-        self.ttl_seconds = int(os.getenv("TTL", 60))  # Default TTL is 60 seconds
 
     ##################################################
     # Movie Management Functions
     ##################################################
 
-    def _get_movie_from_cache_or_db(self, movie_id: int) -> Movies:
-        """
-        Retrieves a movie by ID, using the internal cache if possible.
 
-        This method checks whether a cached version of the movie is available
-        and still valid. If not, it queries the database, updates the cache, and returns the movie.
+    def _get_movie_from_tmdb(self, title: str) -> Movies: 
+        """
+        Retrieves a movie by its title, using TMDB
 
         Args:
-            movie_id (int): The unique ID of the movie to retrieve.
+            title (str): The unique title of the movie to retrieve.
 
         Returns:
             Movies: The movie object corresponding to the given ID.
@@ -53,94 +45,69 @@ class WatchlistModel:
         Raises:
             ValueError: If the movie cannot be found in the database.
         """
-        now = time.time()
-
-        if movie_id in self._movie_cache and self._ttl.get(movie_id, 0) > now:
-            logger.debug(f"Movie ID {movie_id} retrieved from cache")
-            return self._movie_cache[movie_id]
 
         try:
-            movie = Movies.get_movie_by_id(movie_id)
-            logger.info(f"Movie ID {movie_id} loaded from DB")
+            movie = Movies.get_movie_by_title(title) 
+            logger.info(f"Movie '{title}' loaded from TMDB")
         except ValueError as e:
-            logger.error(f"Movie ID {movie_id} not found in DB: {e}")
-            raise ValueError(f"Movie ID {movie_id} not found in database") from e
+            logger.error(f"Movie '{title}' not found in TMDB: {e}")
+            raise ValueError(f"Movie '{title}' not found in TMDB") from e
 
-        self._movie_cache[movie_id] = movie
-        self._ttl[movie_id] = now + self.ttl_seconds
         return movie
-
-    def add_movie_to_watchlist(self, movie_id: int) -> None:
+    
+        
+    def add_movie_to_watchlist(self, title: str) -> None:
         """
-        Adds a movie to the watchlist by ID, using the cache or database lookup.
+        Adds a movie to the watchlist by title, by querying the TMDB Api.
 
         Args:
-            movie_id (int): The ID of the movie to add to the watchlist.
-
-        Raises:
-            ValueError: If the movie ID is invalid or already exists in the watchlist.
-        """
-        logger.info(
-            f"Received request to add movie with ID {movie_id} to the watchlist"
-        )
-
-        movie_id = self.validate_movie_id(movie_id, check_in_watchlist=False)
-
-        if movie_id in self.watchlist:
-            logger.error(f"Movie with ID {movie_id} already exists in the watchlist")
-            raise ValueError(
-                f"Movie with ID {movie_id} already exists in the watchlist"
-            )
-
-        try:
-            movie = self._get_movie_from_cache_or_db(movie_id)
-        except ValueError as e:
-            logger.error(f"Failed to add movie: {e}")
-            raise
-
-        self.watchlist.append(movie.id)
-        logger.info(
-            f"Successfully added to watchlist: {movie.title} ({movie.release_year})"
-        )
-
-    def add_movie_to_watchlist_by_name(self, movie_name: str) -> None:
-        """
-        Adds a movie to the watchlist by name, by querying the TMDB Api.
-
-        Args:
-            movie_name (str): The name of the movie to add to the watchlist.
+            title (str): The name of the movie to add to the watchlist.
 
         Raises:
             ValueError if non-string title is entered or movie title is not found in TMDB database.
         """
-        raw_movie_data = api_get_movie_by_title(movie_name)
+        logger.info(
+            f"Received request to add movie '{title}' to the watchlist"
+        )
+
+        title = self.validate_movie_title(title)
+
+        if title in self.watchlist:
+            logger.error(f"Movie called '{title}' already exists in the watchlist")
+            raise ValueError(f"Movie called '{title}' already exists in the watchlist")
+        
+        try:
+            new_movie = self._get_movie_from_tmdb(title)
+        except ValueError as e:
+            logger.error(f"Failed to add movie: {e}")
+            raise
+
+        self.watchlist.append(movie.title)
+        logger.info(f"Successfully added to watchlist: '{movie.title}' ({movie.release_year})")
 
         # create instance in the database now -- more logic necessary... do i use the cls thing?
 
-
-
-
-    def remove_movie_by_movie_id(self, movie_id: int) -> None:
-        """Removes a movie from the watchlist by its movie ID.
+    def remove_movie_from_watchlist(self, title: str) -> None:
+        """Removes a movie from the watchlist by its title.
 
         Args:
-            movie_id (int): The ID of the movie to remove from the playlist.
+            title (str): The name of the movie to remove from the watchlist.
 
         Raises:
             ValueError: If the watchlist is empty or the movie ID is invalid.
 
         """
-        logger.info(f"Received request to remove movie with ID {movie_id}")
+        logger.info(f"Received request to remove movie '{title}'")
 
         self.check_if_empty()
-        movie_id = self.validate_movie_id(movie_id)
+        title = self.validate_movie_title(title)
 
-        if movie_id not in self.watchlist:
-            logger.warning(f"Movie with ID {movie_id} not found in the watchlist")
-            raise ValueError(f"Movie with ID {movie_id} not found in the watchlist")
+        if title not in self.watchlist:
+            logger.warning(f"Movie '{title}' not found in the watchlist")
+            raise ValueError(f"Movie '{title}' not found in the watchlist")
 
-        self.watchlist.remove(movie_id)
-        logger.info(f"Successfully removed movie with ID {movie_id} from the watchlist")
+        self.watchlist.remove(movie.title)
+        logger.info(f"Successfully removed movie '{title}' from the watchlist")
 
     def clear_watchlist(self) -> None:
         """Clears all movies from the watchlist.
@@ -163,7 +130,7 @@ class WatchlistModel:
     # Watchlist Retrieval Functions
     ##################################################
 
-    def get_all_movies(self) -> List[Movies]:
+    def get_all_movies(self) -> List[Movies]: #YES
         """Returns a list of all movies in the watchlist using cached movie data.
 
         Returns:
@@ -175,50 +142,8 @@ class WatchlistModel:
         self.check_if_empty()
         logger.info("Retrieving all movies in the watchlist")
         return [
-            self._get_movie_from_cache_or_db(movie_id) for movie_id in self.watchlist
+            self._get_movie_from_tmdb(title) for title in self.watchlist
         ]
-
-    def get_movie_by_movie_id(self, movie_id: int) -> Movies:
-        """Retrieves a movie from the playlist by its movie ID using the cache or DB.
-
-        Args:
-            movie_ID (int): The ID of the movie to retrieve.
-
-        Returns:
-            Movie: The movie with the specified ID.
-
-        Raises:
-            ValueError: If the watchlist is empty or the movie is not found.
-        """
-        self.check_if_empty()
-        movie_id = self.validate_movie_id(movie_id)
-        logger.info(f"Retrieving movie with ID {movie_id} from the watchlist")
-        movie = self._get_movie_from_cache_or_db(movie_id)
-        logger.info(
-            f"Successfully retrieved movie: {movie.title} ({movie.release_year})"
-        )
-        return movie
-
-    def get_movie_by_title(self, title: str) -> Movies:
-        """Retrieves a movie from the playlist by its title using the cache or DB.
-
-        Args:
-            title (str): The title of the movie to retrieve.
-
-        Returns:
-            Movie: The movie with the specified ID.
-
-        Raises:
-            ValueError: If the watchlist is empty or the movie is not found.
-        """
-        self.check_if_empty()
-        movie_id = self.validate_movie_id(movie_id)
-        logger.info(f"Retrieving movie with ID {movie_id} from the watchlist")
-        movie = self._get_movie_from_cache_or_db(movie_id)
-        logger.info(
-            f"Successfully retrieved movie: {movie.title} ({movie.release_year})"
-        )
-        return movie
 
     def get_watchlist_length(self) -> int:
         """Returns the number of movies in the watchlist.
@@ -244,11 +169,13 @@ class WatchlistModel:
         self.check_if_empty()
 
         # Get a random index using the random.org API
-        movie_id = get_random(self.get_watchlist_length())  ## CHECK THIS LOGIC?????????
+        movie_id_rand = get_random(self.get_watchlist_length()) 
         logger.info(
-            f"Retrieving randomly-selected movie with ID {movie_id} from the watchlist"
+            f"Retrieving randomly-selected movie with ID {movie_id_rand} from the watchlist"
         )
-        movie = self._get_movie_from_cache_or_db(movie_id)
+        for movie_id, title in self.watchlist: ##REALLLYYY HACKKYYYY
+            if movie_id == movie_id_rand:
+                movie = Movie.get_movie_by_title(title)
         logger.info(
             f"Successfully retrieved random movie from watchlist: {movie.title} ({movie.release_year})"
         )
@@ -265,42 +192,28 @@ class WatchlistModel:
     #
     ####################################################################################################
 
-    def validate_movie_id(self, movie_id: int, check_in_watchlist: bool = True) -> int:
+    def validate_movie_title(self, title: str) -> str:
         """
         Validates the given movie ID.
 
         Args:
-            movie_id (int): The movie ID to validate.
-            check_in_watchlist (bool, optional): If True, verifies the ID is present in the watchlist.
-                                                If False, skips that check. Defaults to True.
+            title (str): The movie title to validate.
 
         Returns:
-            int: The validated movie ID.
+            str: The validated movie title.
 
         Raises:
-            ValueError: If the movie ID is not a non-negative integer,
-                        not found in the watchlist (if check_in_watchlist=True),
-                        or not found in the database.
+            ValueError: If the movie ID is not a string, or not found in the database.
         """
         try:
-            movie_id = int(movie_id)
-            if movie_id < 0:
+            if not isinstance(title, str):
                 raise ValueError
         except ValueError:
-            logger.error(f"Invalid movie id: {movie_id}")
-            raise ValueError(f"Invalid movie id: {movie_id}")
+            logger.error(f"Invalid movie title: {title}")
+            raise ValueError(f"Invalid movie title: {title}")
 
-        if check_in_watchlist and movie_id not in self.watchlist:
-            logger.error(f"Movie with id {movie_id} not found in watchlist")
-            raise ValueError(f"Movie with id {movie_id} not found in watchlist")
+        return title
 
-        try:
-            self._get_movie_from_cache_or_db(movie_id)
-        except Exception as e:
-            logger.error(f"Movie with id {movie_id} not found in database: {e}")
-            raise ValueError(f"Movie with id {movie_id} not found in database")
-
-        return movie_id
 
     def check_if_empty(self) -> None:
         """

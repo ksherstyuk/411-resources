@@ -3,7 +3,6 @@ import os
 import requests
 from dotenv import load_dotenv
 
-#PLAYLIST VERSION // NOT EDITED
 
 from utils.logger import configure_logger
 

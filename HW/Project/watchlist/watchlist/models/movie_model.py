@@ -134,9 +134,9 @@ class Movies(db.Model):
             raise
 
     @classmethod
-    def get_movie_by_title(cls, title: str) -> "Movies":
+    def get_movie_by_title(cls, title: str) -> "Movies": #THIS NEEDS TO BE FIXED TO CALL CREATE_MOVIE TO ASSIGN RAW MOVIE DATA TO FIELDS
         """
-        Retrieves a movie by its title.
+        Retrieves a raw movie data (from API) by its title, creating a movie instance and returning it.
 
         Args:
             title (str): The movie title.
@@ -149,6 +149,10 @@ class Movies(db.Model):
             SQLAlchemyError: If a database error occurs.
         """
         logger.info(f"Attempting to retrieve movie with title '{title}'")
+
+
+        raw_movie_data = api_get_movie_by_title(movie_name)
+        #PARSE STUFF NOW & CREATE INSTANCE OF MOVIE
 
         try:
             movie = cls.query.get(title)
@@ -164,67 +168,3 @@ class Movies(db.Model):
             logger.error(f"Database error while retrieving movie by title '{title}': {e}")
             raise
 
-    @classmethod
-    def get_all_movies(cls, sort_by_average_rating: bool = False) -> list[dict]:
-        """
-        Retrieves all movies from the watchlist as dictionaries.
-
-        Args:
-            sort_by_average_rating (bool): If True, sort the movies by rating in descending order.
-
-        Returns:
-            list[dict]: A list of dictionaries representing all movies with ratings.
-
-        Raises:
-            SQLAlchemyError: If any database error occurs.
-        """
-        logger.info("Attempting to retrieve all movies from the watchlist")
-
-        try:
-            query = cls.query
-            if sort_by_average_rating:
-                query = query.order_by(cls.average_rating.desc())
-
-            movies = query.all()
-
-            if not movies:
-                logger.warning("The movie watchlist is empty.")
-                return []
-
-            results = [
-                {
-                    "id": movie.id,
-                    "title": movie.title,
-                    "release_year": movie.release_year,
-                    "runtime": movie.runtime,
-                    "popularity": movie.popularity,
-                    "average_runtime": movie.average_runtime
-                }
-                for movie in movies
-            ]
-
-            logger.info(f"Retrieved {len(results)} movies from the catalog")
-            return results
-
-        except SQLAlchemyError as e:
-            logger.error(f"Database error while retrieving all movies: {e}")
-            raise
-
-    @classmethod
-    def get_random_movie(cls) -> dict:
-        """
-        Retrieves a random movie from the catalog as a dictionary.
-
-        Returns:
-            dict: A randomly selected movie dictionary.
-        """
-        all_movies = cls.get_all_movies()
-
-        if not all_movies:
-            logger.warning("Cannot retrieve random movie because the movie catalog is empty.")
-            raise ValueError("The movie catalog is empty.")
-
-        index = get_random(len(all_movies))
-        logger.info(f"Random index selected: {index} (total movies: {len(all_movies)})")
-
-        return all_movies[index - 1]

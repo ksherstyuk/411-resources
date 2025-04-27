@@ -3,8 +3,6 @@ import logging
 import os
 import sqlite3
 
-#PLAYLIST VERSION // NOT EDITED -- only changed where said playlist to say watchlist
-
 from watchlist.utils.logger import configure_logger
 
 
@@ -13,7 +11,7 @@ configure_logger(logger)
 
 
 # load the db path from the environment with a default value
-DB_PATH = os.getenv("DB_PATH", "/app/sql/playlist.db")
+DB_PATH = os.getenv("DB_PATH", "/app/sql/watchlist.db")
 
 
 def check_database_connection():

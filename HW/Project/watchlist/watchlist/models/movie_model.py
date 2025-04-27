@@ -102,36 +102,6 @@ class Movies(db.Model):
             logger.error(f"Database error while deleting movie with ID {movie_id}: {e}")
             raise
 
-    @classmethod
-    def get_movie_by_id(cls, movie_id: int) -> "Movies":
-        """
-        Retrieves a movie by its ID.
-
-        Args:
-            movie_id (int): The ID of the movie to retrieve.
-
-        Returns:
-            Movies: The movie instance corresponding to the ID.
-
-        Raises:
-            ValueError: If no movie with the given ID is found.
-            SQLAlchemyError: If a database error occurs.
-        """
-        logger.info(f"Attempting to retrieve movie with ID {movie_id}")
-
-        try:
-            movie = cls.query.get(movie_id)
-
-            if not movie:
-                logger.info(f"Movie with ID {movie_id} not found")
-                raise ValueError(f"Movie with ID {movie_d} not found")
-
-            logger.info(f"Successfully retrieved Movie: {title} ({release_year})")
-            return movie
-
-        except SQLAlchemyError as e:
-            logger.error(f"Database error while retrieving movie by ID {movie_id}: {e}")
-            raise
 
     @classmethod
     def get_movie_by_title(cls, title: str) -> "Movies": #THIS NEEDS TO BE FIXED TO CALL CREATE_MOVIE TO ASSIGN RAW MOVIE DATA TO FIELDS
@@ -152,7 +122,7 @@ class Movies(db.Model):
 
 
         raw_movie_data = api_get_movie_by_title(movie_name)
-        #PARSE STUFF NOW & CREATE INSTANCE OF MOVIE
+        #PARSE STUFF NOW & CREATE INSTANCE OF MOVIE  // call create_movie
 
         try:
             movie = cls.query.get(title)

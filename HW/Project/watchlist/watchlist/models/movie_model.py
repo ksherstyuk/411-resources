@@ -61,9 +61,7 @@ class Movies(db.Model):
             raise
 
         # Prevent duplicates
-        existing = Movies.query.filter_by(
-            title=title_clean, release_year=release_year
-        ).first()
+        existing = Movies.query.filter_by(title=title_clean).first()
         if existing:
             msg = f"Movie with title '{title_clean}' and release year {release_year} already exists."
             logger.error(msg)
@@ -87,54 +85,57 @@ class Movies(db.Model):
             raise
 
     @classmethod
-    def delete_movie(cls, movie_id: int) -> None:
-        logger.info(f"Received request to delete movie with ID {movie_id}")
+    def delete_movie(cls, title: str) -> None:
+        logger.info(f"Received request to delete movie with title '{title}'")
 
         try:
-            movie = cls.query.get(movie_id)
+            movie = cls.query.get(title.strip())
             if not movie:
-                msg = f"Movie with ID {movie_id} not found"
+                msg = f"Movie with title '{title}' not found"
                 logger.warning(msg)
                 raise ValueError(msg)
 
             db.session.delete(movie)
             db.session.commit()
-            logger.info(f"Successfully deleted movie with ID {movie_id}")
+            logger.info(f"Successfully deleted movie with title '{title}'")
         except SQLAlchemyError as e:
             db.session.rollback()
-            logger.error(f"Database error while deleting movie with ID {movie_id}: {e}")
+            logger.error(
+                f"Database error while deleting movie with title '{title}': {e}"
+            )
             raise
 
+    @classmethod
+    def get_movie_by_title(cls, title: str) -> "Movies":
+        """
+        Retrieves a movie from the database by its title.
 
-@classmethod
-def get_movie_by_title(cls, title: str) -> "Movies":
-    """
-    Retrieves a movie from the database by its title.
+        Args:
+            title (str): The movie title.
 
-    Args:
-        title (str): The movie title.
+        Returns:
+            Movies: The movie instance corresponding to the title.
 
-    Returns:
-        Movies: The movie instance corresponding to the title.
+        Raises:
+            ValueError: If no movie with the given title is found.
+            SQLAlchemyError: If a database error occurs.
+        """
+        logger.info(f"Attempting to retrieve movie with title '{title}'")
 
-    Raises:
-        ValueError: If no movie with the given title is found.
-        SQLAlchemyError: If a database error occurs.
-    """
-    logger.info(f"Attempting to retrieve movie with title '{title}'")
+        try:
+            movie = cls.query.filter_by(title=title.strip()).first()
 
-    try:
-        movie = cls.query.filter_by(title=title.strip()).first()
+            if not movie:
+                logger.info(f"Movie with title '{title}' not found in database")
+                raise ValueError(f"Movie with title '{title}' not found")
 
-        if not movie:
-            logger.info(f"Movie with title '{title}' not found in database")
-            raise ValueError(f"Movie with title '{title}' not found")
+            logger.info(
+                f"Successfully retrieved Movie: {movie.title} ({movie.release_year})"
+            )
+            return movie
 
-        logger.info(
-            f"Successfully retrieved Movie: {movie.title} ({movie.release_year})"
-        )
-        return movie
-
-    except SQLAlchemyError as e:
-        logger.error(f"Database error while retrieving movie by title '{title}': {e}")
-        raise
+        except SQLAlchemyError as e:
+            logger.error(
+                f"Database error while retrieving movie by title '{title}': {e}"
+            )
+            raise

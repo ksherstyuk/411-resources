@@ -167,6 +167,18 @@ class WatchlistModel:
         logger.info(f"Retrieving watchlist length: {length} movies")
         return length
 
+    def get_watchlist_duration(self) -> float:
+        """
+        Returns the total duration of the watchlist in hours (rounded to 2 decimal pts).
+
+        Returns:
+            float: The total duration of all movies in the watchlist in hours.
+        """
+        total_duration_min = sum(self._get_movie_from_tmdb(title).runtime for title in self.watchlist)
+        total_duration_hr = round((float(total_duration_min)/60.0), 2)
+        logger.info(f"Retrieving total watchlist duration: {total_duration_hr} hours")
+        return total_duration_hr
+
     def get_random_movie_from_watchlist(self) -> Movies:
         """Returns a randomly-selected movie from the watchlist.
 

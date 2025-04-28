@@ -72,165 +72,69 @@ def test_add_duplicate_movie_to_watchlist(watchlist_model, movie_sonic, mocker):
     with pytest.raises(ValueError, match="Movie called 'Sonic the Hedgehog 2' already exists in the watchlist"):
         watchlist_model.add_movie_to_watchlist(movie_sonic.title)
 
-#stopped here
-def test_remove_song_from_watchlist_by_song_id(watchlist_model, mocker):
-    """Test removing a song from the watchlist by song_id."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", return_value=song_beatles)
 
-    watchlist_model.watchlist = [1,2]
+def test_remove_movie_from_watchlist(watchlist_model, mocker):
+    """Test removing a movie from the watchlist by song_id."""
+    mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_title", return_value=movie_sonic)
 
-    watchlist_model.remove_song_by_song_id(1)
-    assert len(watchlist_model.watchlist) == 1, f"Expected 1 song, but got {len(watchlist_model.watchlist)}"
-    assert watchlist_model.watchlist[0] == 2, "Expected song with id 2 to remain"
+    watchlist_model.watchlist = ["A Clockwork Orange","Sonic the Hedgehog 2"]
 
-
-def test_remove_song_by_track_number(watchlist_model):
-    """Test removing a song from the watchlist by track number."""
-    watchlist_model.watchlist = [1,2]
-    assert len(watchlist_model.watchlist) == 2
-
-    watchlist_model.remove_song_by_track_number(1)
-    assert len(watchlist_model.watchlist) == 1, f"Expected 1 song, but got {len(watchlist_model.watchlist)}"
-    assert watchlist_model.watchlist[0] == 2, "Expected song with id 2 to remain"
+    watchlist_model.remove_movie_from_watchlist(movie_sonic.title)
+    assert len(watchlist_model.watchlist) == 1, f"Expected 1 movie, but got {len(watchlist_model.watchlist)}"
+    assert watchlist_model.watchlist[0] == "A Clockwork Orange", "Expected movie 'A Clockwork Orange' to remain"
 
 
 def test_clear_watchlist(watchlist_model):
     """Test clearing the entire watchlist."""
-    watchlist_model.watchlist.append(1)
+    watchlist_model.watchlist.append('Sonic the Hedgehog 2')
 
     watchlist_model.clear_watchlist()
-    assert len(watchlist_model.watchlist) == 0, "watchlist should be empty after clearing"
-
-
-# ##################################################
-# # Tracklisting Management Test Cases
-# ##################################################
-
-
-def test_move_song_to_track_number(watchlist_model, sample_watchlist, mocker):
-    """Test moving a song to a specific track number in the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1, 2])
-
-    watchlist_model.move_song_to_track_number(2, 1)  # Move Song 2 to the first position
-    assert watchlist_model.watchlist[0] == 2, "Expected Song 2 to be in the first position"
-    assert watchlist_model.watchlist[1] == 1, "Expected Song 1 to be in the second position"
-
-
-def test_swap_songs_in_watchlist(watchlist_model, sample_watchlist, mocker):
-    """Test swapping the positions of two songs in the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1, 2])
-
-    watchlist_model.swap_songs_in_watchlist(1, 2)  # Swap positions of Song 1 and Song 2
-    assert watchlist_model.watchlist[0] == 2, "Expected Song 2 to be in the first position"
-    assert watchlist_model.watchlist[1] == 1, "Expected Song 1 to be in the second position"
-
-
-def test_swap_song_with_itself(watchlist_model, song_beatles, mocker):
-    """Test swapping the position of a song with itself raises an error."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", side_effect=[song_beatles] * 2)
-    watchlist_model.watchlist.append(1)
-
-    with pytest.raises(ValueError, match="Cannot swap a song with itself"):
-        watchlist_model.swap_songs_in_watchlist(1, 1)  # Swap positions of Song 1 with itself
-
-
-def test_move_song_to_end(watchlist_model, sample_watchlist, mocker):
-    """Test moving a song to the end of the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1, 2])
-
-    watchlist_model.move_song_to_end(1)  # Move Song 1 to the end
-    assert watchlist_model.watchlist[1] == 1, "Expected Song 1 to be at the end"
-
-
-def test_move_song_to_beginning(watchlist_model, sample_watchlist, mocker):
-    """Test moving a song to the beginning of the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1, 2])
-
-    watchlist_model.move_song_to_beginning(2)  # Move Song 2 to the beginning
-    assert watchlist_model.watchlist[0] == 2, "Expected Song 2 to be at the beginning"
+    assert len(watchlist_model.watchlist) == 0, "Watchlist should be empty after clearing"
 
 
 ##################################################
-# Song Retrieval Test Cases
+# Movie Retrieval Test Cases
 ##################################################
 
 
-def test_get_song_by_track_number(watchlist_model, song_beatles, mocker):
-    """Test successfully retrieving a song from the watchlist by track number."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", return_value=song_beatles)
-    watchlist_model.watchlist.append(1)
+def test_get_all_movies(watchlist_model, sample_watchlist, mocker):
+    """Test successfully retrieving all movies from the watchlist."""
+    mocker.patch("watchlist.models.watchlist_model.WatchlistModel._get_movie_from_tmdb", side_effect=sample_watchlist)
 
-    retrieved_song = watchlist_model.get_song_by_track_number(1)
-    assert retrieved_song.id == 1
-    assert retrieved_song.title == 'Come Together'
-    assert retrieved_song.artist == 'The Beatles'
-    assert retrieved_song.year == 1969
-    assert retrieved_song.duration == 259
-    assert retrieved_song.genre == 'Rock'
+    watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
 
+    all_movies = watchlist_model.get_all_movies()
 
-def test_get_all_songs(watchlist_model, sample_watchlist, mocker):
-    """Test successfully retrieving all songs from the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.watchlistModel._get_song_from_cache_or_db", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1, 2])
-
-    all_songs = watchlist_model.get_all_songs()
-
-    assert len(all_songs) == 2
-    assert all_songs[0].id == 1
-    assert all_songs[1].id == 2
+    assert len(all_movies) == 2
+    assert all_movies[0].title == 'A Clockwork Orange'
+    assert all_movies[1].title == 'Sonic the Hedgehog 2'
 
 
-def test_get_song_by_song_id(watchlist_model, song_beatles, mocker):
-    """Test successfully retrieving a song from the watchlist by song ID."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", return_value=song_beatles)
-    watchlist_model.watchlist.append(1)
+def test_get_movie_by_title(watchlist_model, movie_sonic, mocker):
+    """Test successfully retrieving a movie from the watchlist by title."""
+    mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_title", return_value=movie_sonic)
+    watchlist_model.watchlist.append('Sonic the Hedgehog 2')
 
-    retrieved_song = watchlist_model.get_song_by_song_id(1)
+    retrieved_movie = watchlist_model.get_movie_by_title('Sonic the Hedgehog 2')
 
-    assert retrieved_song.id == 1
-    assert retrieved_song.title == 'Come Together'
-    assert retrieved_song.artist == 'The Beatles'
-    assert retrieved_song.year == 1969
-    assert retrieved_song.duration == 259
-    assert retrieved_song.genre == 'Rock'
-
-
-def test_get_current_song(watchlist_model, song_beatles, mocker):
-    """Test successfully retrieving the current song from the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", return_value=song_beatles)
-
-    watchlist_model.watchlist.append(1)
-
-    current_song = watchlist_model.get_current_song()
-    assert current_song.id == 1
-    assert current_song.title == 'Come Together'
-    assert current_song.artist == 'The Beatles'
-    assert current_song.year == 1969
-    assert current_song.duration == 259
-    assert current_song.genre == 'Rock'
+    assert retrieved_movie.title == 'Sonic the Hedgehog 2'
+    assert retrieved_movie.release_year == 2022
+    assert retrieved_movie.runtime == 123
+    assert retrieved_movie.popularity == 39.11
+    assert retrieved_movie.average_rating == 7.5
 
 
 def test_get_watchlist_length(watchlist_model):
     """Test getting the length of the watchlist."""
-    watchlist_model.watchlist.extend([1, 2])
+    watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
     assert watchlist_model.get_watchlist_length() == 2, "Expected watchlist length to be 2"
 
 
 def test_get_watchlist_duration(watchlist_model, sample_watchlist, mocker):
     """Test getting the total duration of the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.watchlistModel._get_song_from_cache_or_db", side_effect=sample_watchlist)
-    watchlist_model.watchlist.extend([1, 2])
-    assert watchlist_model.get_watchlist_duration() == 560, "Expected watchlist duration to be 560 seconds"
+    mocker.patch("watchlist.models.watchlist_model.WatchlistModel._get_movie_from_tmdb", side_effect=sample_watchlist)
+    watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
+    assert watchlist_model.get_watchlist_duration() == 4.33, "Expected watchlist duration to be 4.33 hours"
 
 
 ##################################################

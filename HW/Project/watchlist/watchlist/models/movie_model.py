@@ -13,8 +13,8 @@ configure_logger(logger)
 class Movies(db.Model):
     __tablename__ = "movies"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    title = db.Column(db.String, nullable=False)
+    # id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String, primary_key=True, nullable=False)
     release_year = db.Column(db.Integer, nullable=False)
     runtime = db.Column(db.Integer, nullable=False)  # in minutes
     popularity = db.Column(db.Float, nullable=False)

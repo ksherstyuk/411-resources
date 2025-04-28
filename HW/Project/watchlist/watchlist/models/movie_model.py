@@ -1,4 +1,3 @@
-
 import logging
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -14,12 +13,12 @@ configure_logger(logger)
 class Movies(db.Model):
     __tablename__ = "movies"
 
-    id              = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    title           = db.Column(db.String,  nullable=False)
-    release_year    = db.Column(db.Integer, nullable=False)
-    runtime         = db.Column(db.Integer, nullable=False)  # in minutes
-    popularity      = db.Column(db.Float,   nullable=False)
-    average_rating  = db.Column(db.Float,   nullable=False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String, nullable=False)
+    release_year = db.Column(db.Integer, nullable=False)
+    runtime = db.Column(db.Integer, nullable=False)  # in minutes
+    popularity = db.Column(db.Float, nullable=False)
+    average_rating = db.Column(db.Float, nullable=False)
 
     def validate(self) -> None:
         if not isinstance(self.title, str) or not self.title.strip():
@@ -30,7 +29,9 @@ class Movies(db.Model):
             raise ValueError("Runtime (in minutes) must be a positive integer.")
         if not isinstance(self.popularity, (int, float)) or self.popularity <= 0:
             raise ValueError("Popularity must be a positive number.")
-        if not isinstance(self.average_rating, (int, float)) or not (0 <= self.average_rating <= 10):
+        if not isinstance(self.average_rating, (int, float)) or not (
+            0 <= self.average_rating <= 10
+        ):
             raise ValueError("Average rating must be a number between 0 and 10.")
 
     @classmethod
@@ -72,7 +73,9 @@ class Movies(db.Model):
         try:
             db.session.add(movie)
             db.session.commit()
-            logger.info(f"Movie successfully added: {movie.title} ({movie.release_year})")
+            logger.info(
+                f"Movie successfully added: {movie.title} ({movie.release_year})"
+            )
         except IntegrityError:
             db.session.rollback()
             msg = f"Movie with title '{title_clean}' and release year {release_year} already exists."
@@ -103,38 +106,35 @@ class Movies(db.Model):
             raise
 
 
-    @classmethod
-    def get_movie_by_title(cls, title: str) -> "Movies": #THIS NEEDS TO BE FIXED TO CALL CREATE_MOVIE TO ASSIGN RAW MOVIE DATA TO FIELDS
-        """
-        Retrieves a raw movie data (from API) by its title, creating a movie instance and returning it.
+@classmethod
+def get_movie_by_title(cls, title: str) -> "Movies":
+    """
+    Retrieves a movie from the database by its title.
 
-        Args:
-            title (str): The movie title.
+    Args:
+        title (str): The movie title.
 
-        Returns:
-            Movies: The movie instance corresponding to the title.
+    Returns:
+        Movies: The movie instance corresponding to the title.
 
-        Raises:
-            ValueError: If no movie with the given title is found.
-            SQLAlchemyError: If a database error occurs.
-        """
-        logger.info(f"Attempting to retrieve movie with title '{title}'")
+    Raises:
+        ValueError: If no movie with the given title is found.
+        SQLAlchemyError: If a database error occurs.
+    """
+    logger.info(f"Attempting to retrieve movie with title '{title}'")
 
+    try:
+        movie = cls.query.filter_by(title=title.strip()).first()
 
-        raw_movie_data = api_get_movie_by_title(movie_name)
-        #PARSE STUFF NOW & CREATE INSTANCE OF MOVIE  // call create_movie
+        if not movie:
+            logger.info(f"Movie with title '{title}' not found in database")
+            raise ValueError(f"Movie with title '{title}' not found")
 
-        try:
-            movie = cls.query.get(title)
+        logger.info(
+            f"Successfully retrieved Movie: {movie.title} ({movie.release_year})"
+        )
+        return movie
 
-            if not movie:
-                logger.info(f"Movie with title '{title}' not found")
-                raise ValueError(f"Movie with title '{title}' not found")
-
-            logger.info(f"Successfully retrieved Movie: {title} ({release_year})")
-            return movie
-
-        except SQLAlchemyError as e:
-            logger.error(f"Database error while retrieving movie by title '{title}': {e}")
-            raise
-
+    except SQLAlchemyError as e:
+        logger.error(f"Database error while retrieving movie by title '{title}': {e}")
+        raise

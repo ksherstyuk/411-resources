@@ -116,24 +116,33 @@ class WatchlistModel:
             raise
 
     def clear_watchlist(self) -> None:
-        """Clears all movies from the watchlist.
+        """Clears all movies from the watchlist and deletes them from the database.
 
-        Clears all movies from the watchlist. If the watchlist is already empty, logs a warning.
+        If the watchlist is already empty, logs a warning.
         """
         logger.info("Received request to clear the watchlist")
 
         try:
-            if self.check_if_empty():
-                pass
+            self.check_if_empty()
         except ValueError:
             logger.warning("Clearing an empty watchlist")
+            return
+
+        for title in self.watchlist:
+            try:
+                Movies.delete_movie(title)
+                logger.info(
+                    f"Deleted movie '{title}' from database while clearing watchlist"
+                )
+            except ValueError as e:
+                logger.error(
+                    f"Error deleting movie '{title}' during watchlist clear: {e}"
+                )
 
         self.watchlist.clear()
-        logger.info("Successfully cleared the watchlist")
-
-    ##################################################
-    # Watchlist Retrieval Functions
-    ##################################################
+        logger.info(
+            "Successfully cleared the watchlist and corresponding database entries"
+        )
 
     def get_all_movies(self) -> List[Movies]:
         """Returns a list of all movies in the watchlist using cached movie data.

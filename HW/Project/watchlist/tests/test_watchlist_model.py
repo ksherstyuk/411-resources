@@ -136,6 +136,12 @@ def test_get_watchlist_duration(watchlist_model, sample_watchlist, mocker):
     watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
     assert watchlist_model.get_watchlist_duration() == 4.33, "Expected watchlist duration to be 4.33 hours"
 
+def test_get_random_movie_from_watchlist(watchlist_model, mocker): #not too sure of this guy
+    """Test getting the a random movie from the watchlist."""
+    watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
+    mocker.patch("watchlist.models.watchlist_model.get_random", return_value=1)
+    assert watchlist_model.get_random_movie_from_watchlist() == 'A Clockwork Orange', "Random index should correspond to first movie in list"
+
 
 ##################################################
 # Utility Function Test Cases
@@ -144,7 +150,7 @@ def test_get_watchlist_duration(watchlist_model, sample_watchlist, mocker):
 
 def test_check_if_empty_non_empty_watchlist(watchlist_model):
     """Test check_if_empty does not raise error if watchlist is not empty."""
-    watchlist_model.watchlist.append(1)
+    watchlist_model.watchlist.append('Sonic the Hedgehog 2')
     try:
         watchlist_model.check_if_empty()
     except ValueError:
@@ -154,157 +160,22 @@ def test_check_if_empty_non_empty_watchlist(watchlist_model):
 def test_check_if_empty_empty_watchlist(watchlist_model):
     """Test check_if_empty raises error when watchlist is empty."""
     watchlist_model.clear_watchlist()
-    with pytest.raises(ValueError, match="watchlist is empty"):
+    with pytest.raises(ValueError, match="Watchlist is empty"):
         watchlist_model.check_if_empty()
 
 
-def test_validate_song_id(watchlist_model, mocker):
-    """Test validate_song_id does not raise error for valid song ID."""
-    mocker.patch("watchlist.models.watchlist_model.watchlistModel._get_song_from_cache_or_db", return_value=True)
+def test_validate_movie_title(watchlist_model, mocker):
+    """Test validate_movie_title does not raise error for valid movie title."""
+    mocker.patch("watchlist.models.watchlist_model.WatchlistModel._get_movie_from_tmdb", return_value=True)
 
-    watchlist_model.watchlist.append(1)
+    watchlist_model.watchlist.append('Sonic the Hedgehog 2')
     try:
-        watchlist_model.validate_song_id(1)
+        watchlist_model.validate_movie_title('Sonic the Hedgehog 2')
     except ValueError:
-        pytest.fail("validate_song_id raised ValueError unexpectedly for valid song ID")
+        pytest.fail("validate_movie_title raised ValueError unexpectedly for valid movie title")
 
 
-def test_validate_song_id_no_check_in_watchlist(watchlist_model, mocker):
-    """Test validate_song_id does not raise error for valid song ID when the id isn't in the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.watchlistModel._get_song_from_cache_or_db", return_value=True)
-    try:
-        watchlist_model.validate_song_id(1, check_in_watchlist=False)
-    except ValueError:
-        pytest.fail("validate_song_id raised ValueError unexpectedly for valid song ID")
-
-
-def test_validate_song_id_invalid_id(watchlist_model):
-    """Test validate_song_id raises error for invalid song ID."""
-    with pytest.raises(ValueError, match="Invalid song id: -1"):
-        watchlist_model.validate_song_id(-1)
-
-    with pytest.raises(ValueError, match="Invalid song id: invalid"):
-        watchlist_model.validate_song_id("invalid")
-
-
-def test_validate_song_id_not_in_watchlist(watchlist_model, song_nirvana, mocker):
-    """Test validate_song_id raises error for song ID not in the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", return_value=song_nirvana)
-    watchlist_model.watchlist.append(1)
-    with pytest.raises(ValueError, match="Song with id 2 not found in watchlist"):
-        watchlist_model.validate_song_id(2)
-
-
-def test_validate_track_number(watchlist_model):
-    """Test validate_track_number does not raise error for valid track number."""
-    watchlist_model.watchlist.append(1)
-    try:
-        watchlist_model.validate_track_number(1)
-    except ValueError:
-        pytest.fail("validate_track_number raised ValueError unexpectedly for valid track number")
-
-@pytest.mark.parametrize("track_number, expected_error", [
-    (0, "Invalid track number: 0"),
-    (2, "Invalid track number: 2"),
-    ("invalid", "Invalid track number: invalid"),
-])
-def test_validate_track_number_invalid(watchlist_model, track_number, expected_error):
-    """Test validate_track_number raises error for invalid track numbers."""
-    watchlist_model.watchlist.append(1)
-
-    with pytest.raises(ValueError, match=expected_error):
-        watchlist_model.validate_track_number(track_number)
-
-
-
-##################################################
-# Playback Test Cases
-##################################################
-
-
-def test_play_current_song(watchlist_model, sample_watchlist, mocker):
-    """Test playing the current song."""
-    mock_update_play_count = mocker.patch("watchlist.models.watchlist_model.Songs.update_play_count")
-    mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1, 2])
-
-    watchlist_model.play_current_song()
-
-    # Assert that CURRENT_TRACK_NUMBER has been updated to 2
-    assert watchlist_model.current_track_number == 2, f"Expected track number to be 2, but got {watchlist_model.current_track_number}"
-
-    # Assert that update_play_count was called with the id of the first song
-    mock_update_play_count.assert_called_once_with()
-
-    # Get the second song from the iterator (which will increment CURRENT_TRACK_NUMBER back to 1)
-    watchlist_model.play_current_song()
-
-    # Assert that CURRENT_TRACK_NUMBER has been updated back to 1
-    assert watchlist_model.current_track_number == 1, f"Expected track number to be 1, but got {watchlist_model.current_track_number}"
-
-    # Assert that update_play_count was called with the id of the second song
-    mock_update_play_count.assert_called_with()
-
-
-def test_rewind_watchlist(watchlist_model):
-    """Test rewinding the iterator to the beginning of the watchlist."""
-    watchlist_model.watchlist.extend([1, 2])
-    watchlist_model.current_track_number = 2
-
-    watchlist_model.rewind_watchlist()
-    assert watchlist_model.current_track_number == 1, "Expected to rewind to the first track"
-
-
-def test_go_to_track_number(watchlist_model):
-    """Test moving the iterator to a specific track number in the watchlist."""
-    watchlist_model.watchlist.extend([1, 2])
-
-    watchlist_model.go_to_track_number(2)
-    assert watchlist_model.current_track_number == 2, "Expected to be at track 2 after moving song"
-
-
-def test_go_to_random_track(watchlist_model, mocker):
-    """Test that go_to_random_track sets a valid random track number."""
-    watchlist_model.watchlist.extend([1, 2])
-
-    mocker.patch("watchlist.models.watchlist_model.get_random", return_value=2)
-
-    watchlist_model.go_to_random_track()
-    assert watchlist_model.current_track_number == 2, "Current track number should be set to the random value"
-
-
-def test_play_entire_watchlist(watchlist_model, sample_watchlist, mocker):
-    """Test playing the entire watchlist."""
-    mock_update_play_count = mocker.patch("watchlist.models.watchlist_model.Songs.update_play_count")
-    mocker.patch("watchlist.models.watchlist_model.watchlistModel._get_song_from_cache_or_db", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1,2])
-
-    watchlist_model.play_entire_watchlist()
-
-    # Check that all play counts were updated
-    mock_update_play_count.assert_any_call()
-    assert mock_update_play_count.call_count == len(watchlist_model.watchlist)
-
-    # Check that the current track number was updated back to the first song
-    assert watchlist_model.current_track_number == 1, "Expected to loop back to the beginning of the watchlist"
-
-
-def test_play_rest_of_watchlist(watchlist_model, sample_watchlist, mocker):
-    """Test playing from the current position to the end of the watchlist.
-
-    """
-    mock_update_play_count = mocker.patch("watchlist.models.watchlist_model.Songs.update_play_count")
-    mocker.patch("watchlist.models.watchlist_model.watchlistModel._get_song_from_cache_or_db", side_effect=sample_watchlist)
-
-    watchlist_model.watchlist.extend([1, 2])
-    watchlist_model.current_track_number = 2
-
-    watchlist_model.play_rest_of_watchlist()
-
-    # Check that play counts were updated for the remaining songs
-    mock_update_play_count.assert_any_call()
-    assert mock_update_play_count.call_count == 1
-
-    assert watchlist_model.current_track_number == 1, "Expected to loop back to the beginning of the watchlist"
+def test_validate_movie_title_invalid_title(watchlist_model):
+    """Test validate_movie_title raises error for invalid movie title."""
+    with pytest.raises(ValueError, match="Invalid movie title: 19999"):
+        watchlist_model.validate_movie_title(19999)

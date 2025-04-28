@@ -568,7 +568,7 @@ def create_app(config_class=ProductionConfig) -> Flask:
                 500,
             )
 
-    @app.route("/api/get-movie-from-watchlist-by-title/<str:title>", methods=["GET"])
+    @app.route("/api/get-movie-from-watchlist-by-title/<title>", methods=["GET"])
     @login_required
     def get_movie_by_title(title: str) -> Response:
         """Retrieve a song from the playlist by its title.

@@ -526,15 +526,6 @@ def create_app(config_class=ProductionConfig) -> Flask:
     @app.route("/api/get-all-movies-from-watchlist", methods=["GET"])
     @login_required
     def get_all_movies_from_watchlist() -> Response:
-        """Retrieve all movies in the watchlist.
-
-        Returns:
-            JSON response containing the list of movies.
-
-        Raises:
-            500 error if there is an issue retrieving the watchlist.
-
-        """
         try:
             app.logger.info(
                 "Received request to retrieve all movies from the watchlist."
@@ -543,9 +534,26 @@ def create_app(config_class=ProductionConfig) -> Flask:
             movies = watchlist_model.get_all_movies()
 
             app.logger.info(
-                f"Successfully retrieved {len(movies)} movies from the playlist."
+                f"Successfully retrieved {len(movies)} movies from the watchlist."
             )
-            return make_response(jsonify({"status": "success", "movies": movies}), 200)
+            return make_response(
+                jsonify(
+                    {
+                        "status": "success",
+                        "movies": [
+                            {
+                                "title": movie.title,
+                                "release_year": movie.release_year,
+                                "runtime": movie.runtime,
+                                "popularity": movie.popularity,
+                                "average_rating": movie.average_rating,
+                            }
+                            for movie in movies
+                        ],
+                    }
+                ),
+                200,
+            )
 
         except Exception as e:
             app.logger.error(f"Failed to retrieve movies from watchlist: {e}")

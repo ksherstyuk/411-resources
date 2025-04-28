@@ -145,7 +145,7 @@ class WatchlistModel:
         )
 
     def get_all_movies(self) -> List[Movies]:
-        """Returns a list of all movies in the watchlist using cached movie data.
+        """Returns a list of all movies in the watchlist using DB movie data.
 
         Returns:
             List[Movies]: A list of all movies in the watchlist.

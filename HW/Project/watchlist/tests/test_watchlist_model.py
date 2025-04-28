@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import pytest
 
@@ -11,69 +11,68 @@ def watchlist_model():
     """Fixture to provide a new instance of WatchlistModel for each test."""
     return WatchlistModel()
 
-"""Fixtures providing sample songs for the tests."""
+"""Fixtures providing sample movies for the tests."""
 @pytest.fixture
-def song_beatles(session):
+def movie_clockwork_orange(session):
     # Refine with creating sample movie by title from IMDB database. 
     # Remove if not needed.
-    """Fixture for a Beatles song."""
-    song = Songs(
-        artist="The Beatles",
-        title="Come Together",
-        year=1969,
-        genre="Rock",
-        duration=259
+    # i think we just define a fake movie, since we're not testing API here
+    """Fixture for the movie 'A Clockwork Orange'."""
+    movie = Movies(
+        title="A Clockwork Orange",
+        release_year=1971,
+        runtime=137,
+        popularity=32.11, #arbitrary
+        average_rating=8.2
     )
-    session.add(song)
+    session.add(movie)
     session.commit()
-    return song
+    return movie
 
 @pytest.fixture
-def song_nirvana(session):
-    # Refine with creating sample movie by title from IMDB database.
-    # Remove if not needed.
-    """Fixture for a Nirvana song."""
-    song = Songs(
-        artist="Nirvana",
-        title="Smells Like Teen Spirit",
-        year=1991,
-        genre="Grunge",
-        duration=301
+def movie_sonic(session):
+    """Fixture for a the movie 'Sonic the Hedgehog 2'."""
+    movie = Movies(
+        title="Sonic the Hedgehog 2",
+        release_year=2022,
+        runtime=123,
+        popularity=39.11, #arbitrary
+        average_rating=7.5
     )
-    session.add(song)
+    session.add(movie)
     session.commit()
-    return song
+    return movie
 
 @pytest.fixture
-def sample_watchlist(song_beatles, song_nirvana):
+def sample_watchlist(movie_flow, movie_):
     """Fixture for a sample watchlist."""
-    return [song_beatles, song_nirvana]
+    return [movie_clockwork_orange, movie_sonic]
 
 ##################################################
-# Add / Remove Song Management Test Cases
+# Add / Remove Movie Management Test Cases
 ##################################################
 
 
-def test_add_movie_to_watchlist(watchlist_model, song_beatles, mocker):
+def test_add_movie_to_watchlist(watchlist_model, movie_sonic, mocker):
     # Movies cannot be added via ID as they are not from catalog; 
     # Refine with adding movie by title from IMDB database.
     """Test adding a movie to the watchlist."""
-    mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_id", return_value=song_beatles)
-    watchlist_model.add_movie_to_watchlist(1)
+    mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_title", return_value=movie_sonic)
+    watchlist_model.add_movie_to_watchlist(movie_sonic.title)
     assert len(watchlist_model.watchlist) == 1
-    assert watchlist_model.watchlist[0] == 1
+    assert watchlist_model.watchlist[0] == 'Sonic the Hedgehog 2'
 
 
-def test_add_duplicate_song_to_watchlist(watchlist_model, song_beatles, mocker):
+def test_add_duplicate_movie_to_watchlist(watchlist_model, movie_sonic, mocker):
     # Movies cannot be added via ID as they are not from catalog; 
     # Refine with adding movie by title from IMDB database.
     """Test error when adding a duplicate song to the watchlist by ID."""
-    mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_id", side_effect=[song_beatles] * 2)
-    watchlist_model.add_movie_to_watchlist(1)
-    with pytest.raises(ValueError, match="Movie with ID 1 already exists in the watchlist"):
-        watchlist_model.add_movie_to_watchlist(1)
+    mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_title", side_effect=[movie_sonic] * 2)
+    watchlist_model.add_movie_to_watchlist(movie_sonic.title)
+    with pytest.raises(ValueError, match="Movie called 'Sonic the Hedgehog 2' already exists in the watchlist"):
+        watchlist_model.add_movie_to_watchlist(movie_sonic.title)
 
-
+#stopped here
 def test_remove_song_from_watchlist_by_song_id(watchlist_model, mocker):
     """Test removing a song from the watchlist by song_id."""
     mocker.patch("watchlist.models.watchlist_model.Songs.get_song_by_id", return_value=song_beatles)

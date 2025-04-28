@@ -611,31 +611,33 @@ def create_app(config_class=ProductionConfig) -> Flask:
                 500,
             )
 
-    @app.route("/api/get-watchlist-length", methods=["GET"])
+    @app.route("/api/get-watchlist-length-and-duration", methods=["GET"])
     @login_required
     def get_watchlist_length() -> Response:
-        """Retrieve the length (number of movies) of the watchlist.
+        """Retrieve the length (number of movies) of the watchlist, and total duration (in hours)
 
         Returns:
-            JSON response containing the watchlist length.
+            JSON response containing the watchlist length and total duration.
 
         Raises:
             500 error if there is an issue retrieving watchlist information.
 
         """
         try:
-            app.logger.info("Received request to retrieve watchlist length.")
+            app.logger.info("Received request to retrieve watchlist length & total duration.")
 
             watchlist_length = watchlist_model.get_watchlist_length()
+            watchlist_duration = watchlist_model.get_watchlist_duration()
 
-            app.logger.info(f"Watchlist contains {watchlist_length} movies.")
-            return make_response(
-                jsonify({"status": "success", "watchlist_length": watchlist_length}),
-                200,
-            )
+            app.logger.info(f"Watchlist contains {watchlist_length} movies with a total duration of {watchlist_duration" hours)
+            return make_response(jsonify({
+                "status": "success",
+                "watchlist_length": watchlist_length,
+                "watchlist_duration": watchlist_duration
+            }), 200)
 
         except Exception as e:
-            app.logger.error(f"Failed to retrieve watchlist length: {e}")
+            app.logger.error(f"Failed to retrieve watchlist length and duration: {e}")
             return make_response(
                 jsonify(
                     {

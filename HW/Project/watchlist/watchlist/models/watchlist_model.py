@@ -109,8 +109,7 @@ class WatchlistModel:
         logger.info(f"Successfully removed movie '{title}' from the watchlist")
 
         try:
-            movie_to_delete = Movies.get_movie_by_title(title)
-            Movies.delete_movie(movie_to_delete.id)
+            Movies.delete_movie(title)
             logger.info(f"Successfully deleted movie '{title}' from database")
         except ValueError as e:
             logger.error(f"Movie '{title}' could not be deleted from database: {e}")

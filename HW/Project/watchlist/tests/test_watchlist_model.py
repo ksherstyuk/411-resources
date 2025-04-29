@@ -14,9 +14,6 @@ def watchlist_model():
 """Fixtures providing sample movies for the tests."""
 @pytest.fixture
 def movie_clockwork_orange(session):
-    # Refine with creating sample movie by title from IMDB database. 
-    # Remove if not needed.
-    # i think we just define a fake movie, since we're not testing API here
     """Fixture for the movie 'A Clockwork Orange'."""
     movie = Movies(
         title="A Clockwork Orange",

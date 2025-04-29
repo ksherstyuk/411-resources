@@ -629,7 +629,7 @@ def create_app(config_class=ProductionConfig) -> Flask:
             watchlist_length = watchlist_model.get_watchlist_length()
             watchlist_duration = watchlist_model.get_watchlist_duration()
 
-            app.logger.info(f"Watchlist contains {watchlist_length} movies with a total duration of {watchlist_duration" hours)
+            app.logger.info(f"Watchlist contains {watchlist_length} movies with a total duration of {watchlist_duration} hours")
             return make_response(jsonify({
                 "status": "success",
                 "watchlist_length": watchlist_length,

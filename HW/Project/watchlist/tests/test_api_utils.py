@@ -80,3 +80,43 @@ def test_validate_string_invalid():
     assert validate_string(1234) is False
     assert validate_string(None) is False
     assert validate_string([]) is False
+
+
+def test_api_get_movie_by_title_success(mocker):
+    """Test successful retrieval of a movie by title from TMDB."""
+    from watchlist.utils.api_utils import api_get_movie_by_title
+
+    mocker.patch("watchlist.utils.api_utils.get_api_key", return_value="fake-api-key")
+    mock_response = mocker.Mock()
+    mock_response.json.return_value = {
+        "total_results": 2,
+        "results": [{"title": "Fake Movie"}],
+    }
+    mocker.patch("watchlist.utils.api_utils.requests.get", return_value=mock_response)
+
+    result = api_get_movie_by_title("Fake Movie")
+    assert isinstance(result, dict)
+    assert result["title"] == "Fake Movie"
+
+
+def test_api_get_movie_by_title_invalid_type():
+    """Test handling of invalid (non-string) movie title input."""
+    from watchlist.utils.api_utils import api_get_movie_by_title
+
+    with pytest.raises(ValueError, match="Movie title must be inputted as a String!"):
+        api_get_movie_by_title(1234)
+
+
+def test_api_get_movie_by_title_not_found(mocker):
+    """Test handling of a case where the movie is not found in TMDB."""
+    from watchlist.utils.api_utils import api_get_movie_by_title
+
+    mocker.patch("watchlist.utils.api_utils.get_api_key", return_value="fake-api-key")
+    mock_response = mocker.Mock()
+    mock_response.json.return_value = {"total_results": 0, "results": []}
+    mocker.patch("watchlist.utils.api_utils.requests.get", return_value=mock_response)
+
+    with pytest.raises(
+        ValueError, match="Movie with entered title does not exist in the database."
+    ):
+        api_get_movie_by_title("Nonexistent Movie")

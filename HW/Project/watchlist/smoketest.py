@@ -6,21 +6,20 @@ def run_smoketest():
     username = "test"
     password = "test"
 
-
-    song_beatles = {
-        "artist": "The Beatles",
-        "title": "Come Together",
-        "year": 1969,
-        "genre": "Rock",
-        "duration": 259
+    movie_clockwork_orange = {
+        "title": "The Beatles",
+        "release_year": 1971,
+        "runtime": 137,
+        "popularity": 32.11,
+        "average_rating": 8.2
     }
 
-    song_nirvana = {
-        "artist": "Nirvana",
-        "title": "Smells Like Teen Spirit",
-        "year": 1991,
-        "genre": "Grunge",
-        "duration": 301
+    movie_sonic = {
+        "title": "Sonic the Hedgehog 2",
+        "release_year": 2022,
+        "runtime": 123,
+        "popularity": 39.11,
+        "average_rating": 7.5
     }
 
     health_response = requests.get(f"{base_url}/health")
@@ -32,10 +31,10 @@ def run_smoketest():
     assert delete_user_response.json()["status"] == "success"
     print("Reset users successful")
 
-    delete_song_response = requests.delete(f"{base_url}/reset-songs")
-    assert delete_song_response.status_code == 200
-    assert delete_song_response.json()["status"] == "success"
-    print("Reset song successful")
+    delete_movie_response = requests.delete(f"{base_url}/reset-movies")
+    assert delete_movie_response.status_code == 200
+    assert delete_movie_response.json()["status"] == "success"
+    print("Reset movie successful")
 
     create_user_response = requests.put(f"{base_url}/create-user", json={
         "username": username,
@@ -56,10 +55,20 @@ def run_smoketest():
     assert login_resp.json()["status"] == "success"
     print("Login successful")
 
-    create_song_resp = session.post(f"{base_url}/create-song", json=song_beatles)
-    assert create_song_resp.status_code == 201
-    assert create_song_resp.json()["status"] == "success"
-    print("Boxer creation successful")
+
+
+
+
+    #NOT YET IN APP.PY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    create_movie_resp = session.post(f"{base_url}/create-movie", json=movie_sonic)
+    assert create_movie_resp.status_code == 201
+    assert create_movie_resp.json()["status"] == "success"
+    print("Movie creation successful")
+
+
+
+
+
 
     # Change password
     change_password_resp = session.post(f"{base_url}/change-password", json={
@@ -78,10 +87,6 @@ def run_smoketest():
     assert login_resp.json()["status"] == "success"
     print("Login with new password successful")
 
-    create_boxer_resp = session.post(f"{base_url}/create-song", json=song_nirvana)
-    assert create_boxer_resp.status_code == 201
-    assert create_boxer_resp.json()["status"] == "success"
-    print("Song creation successful")
 
     # Log out
     logout_resp = session.post(f"{base_url}/logout")
@@ -89,11 +94,11 @@ def run_smoketest():
     assert logout_resp.json()["status"] == "success"
     print("Logout successful")
 
-    create_boxer_logged_out_resp = session.post(f"{base_url}/create-song", json=song_nirvana)
+    create_movie_logged_out_resp = session.post(f"{base_url}/create-movie", json=movie_sonic)
     # This should fail because we are logged out
-    assert create_boxer_logged_out_resp.status_code == 401
-    assert create_boxer_logged_out_resp.json()["status"] == "error"
-    print("Song creation failed as expected")
+    assert create_movie_logged_out_resp.status_code == 401
+    assert create_movie_logged_out_resp.json()["status"] == "error"
+    print("Movie creation failed as expected")
 
 if __name__ == "__main__":
     run_smoketest()

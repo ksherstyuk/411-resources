@@ -16,6 +16,7 @@ from watchlist.models.watchlist_model import WatchlistModel
 from watchlist.models.user_model import Users
 from watchlist.utils.logger import configure_logger
 
+#NEED TO ADD CREATE-MOVIE, DELETE-MOVIE!!!!!!!
 
 load_dotenv()
 

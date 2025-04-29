@@ -8,6 +8,7 @@ The backend is fully containerized with Docker and  uses a SQLite database with 
 
 
 API: [The Movie Database API (TMDB)](https://developer.themoviedb.org/reference/overview)
+     [Random Integer Generator API (RANDOM.ORG)] (https://www.random.org/integers/)
 
 ## Routes
 

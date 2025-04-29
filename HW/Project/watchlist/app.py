@@ -308,6 +308,124 @@ def create_app(config_class=ProductionConfig) -> Flask:
     #
     ##########################################################
 
+
+    @app.route('/api/create-movie', methods=['POST'])
+    @login_required
+    def create_moive() -> Response:
+        """Route to add a new movie.
+
+        Expected JSON Input:
+            - title (str): The movie title.
+            - release_year (int): The year the movie was released.
+            - runtime (int): The movie runtime in minutes.
+            - popularity (float): Unitless indicator of populator from TMDB.
+            - average_rating (float): The average IMDB user rating for the movie (out of 10).
+
+        Returns:
+            JSON response indicating the success of the moive addition.
+
+        Raises:
+            400 error if input validation fails.
+            500 error if there is an issue adding the movie.
+
+        """
+        app.logger.info("Received request to add a new movie")
+
+        try:
+            data = request.get_json()
+
+            required_fields = ["title", "release_year", "runtime", "popularity", "average_rating"]
+            missing_fields = [field for field in required_fields if field not in data]
+
+            if missing_fields:
+                app.logger.warning(f"Missing required fields: {missing_fields}")
+                return make_response(jsonify({
+                    "status": "error",
+                    "message": f"Missing required fields: {', '.join(missing_fields)}"
+                }), 400)
+
+            title = data["title"]
+            release_year = data["release_year"]
+            runtime = data["runtime"]
+            popularity = data["popularity"]
+            average_rating = data["average_rating"]
+
+            if (
+                not isinstance(title, str)
+                or not isinstance(release_year, int)
+                or not isinstance(runtime, int)
+                or not isinstance(popularity, float)
+                or not isinstance(average_rating, float)
+            ):
+                app.logger.warning("Invalid input data types")
+                return make_response(jsonify({
+                    "status": "error",
+                    "message": "Invalid input types: title hould be a string, release_year/runtime should be ints, popularity/average_rating should be floats"
+                }), 400)
+
+            app.logger.info(f"Adding movie: '{title}' ({release_year}), Runtime: {runtime} m, Average rating: {average_rating}/10")
+            Movis.create_movie(artist=artist, title=title, year=year, genre=genre, duration=duration)
+
+            app.logger.info(f"Movie added successfully: '{title}' ({release_year})")
+            return make_response(jsonify({
+                "status": "success",
+                "message": f"Movie '{title}' ({release_year}) added successfully"
+            }), 201)
+
+        except Exception as e:
+            app.logger.error(f"Failed to add movie: {e}")
+            return make_response(jsonify({
+                "status": "error",
+                "message": "An internal error occurred while adding the movie",
+                "details": str(e)
+            }), 500)
+
+
+    @app.route('/api/delete-movie/<str:title>', methods=['DELETE'])
+    @login_required
+    def delete_movie(title: str) -> Response:
+        """Route to delete a movie by title.
+
+        Path Parameter:
+            - title (str): The name of the movie to delete.
+
+        Returns:
+            JSON response indicating success of the operation.
+
+        Raises:
+            400 error if the movie does not exist.
+            500 error if there is an issue removing the movie from the database.
+
+        """
+        try:
+            app.logger.info(f"Received request to delete movie titled '{title}'")
+
+            # Check if the song exists before attempting to delete
+            movie = Movies.get_movie_by_title(title)
+            if not movie:
+                app.logger.warning(f"Movie titled '{title}' not found.")
+                return make_response(jsonify({
+                    "status": "error",
+                    "message": f"Movie titled '{title}' not found"
+                }), 400)
+
+            Movies.delete_movie(title)
+            app.logger.info(f"Successfully deleted movied titled '{title}'")
+
+            return make_response(jsonify({
+                "status": "success",
+                "message": f"Movie '{title}' deleted successfully"
+            }), 200)
+
+        except Exception as e:
+            app.logger.error(f"Failed to delete movie: {e}")
+            return make_response(jsonify({
+                "status": "error",
+                "message": "An internal error occurred while deleting the movie",
+                "details": str(e)
+            }), 500)
+
+
     @app.route("/api/reset-movies", methods=["DELETE"])
     def reset_movies() -> Response:
         """Recreate the movies table to delete movies.

@@ -31,9 +31,9 @@ def run_smoketest():
     assert delete_user_response.json()["status"] == "success"
     print("Reset users successful")
 
-    delete_movie_response = requests.delete(f"{base_url}/reset-movies")
-    assert delete_movie_response.status_code == 200
-    assert delete_movie_response.json()["status"] == "success"
+    reset_movie_response = requests.delete(f"{base_url}/reset-movies")
+    assert reset_movie_response.status_code == 200
+    assert reset_movie_response.json()["status"] == "success"
     print("Reset movie successful")
 
     create_user_response = requests.put(f"{base_url}/create-user", json={
@@ -55,20 +55,10 @@ def run_smoketest():
     assert login_resp.json()["status"] == "success"
     print("Login successful")
 
-
-
-
-
-    #NOT YET IN APP.PY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     create_movie_resp = session.post(f"{base_url}/create-movie", json=movie_sonic)
     assert create_movie_resp.status_code == 201
     assert create_movie_resp.json()["status"] == "success"
     print("Movie creation successful")
-
-
-
-
-
 
     # Change password
     change_password_resp = session.post(f"{base_url}/change-password", json={

@@ -11,18 +11,20 @@ API: [The Movie Database API (TMDB)](https://developer.themoviedb.org/reference/
 
 ## Routes
 
-Route | Method | Purpose
-/api/health | GET | Healthcheck endpoint to verify app is running.
-/api/create-user | PUT | Register a new user account.
-/api/login | POST | Log in an existing user.
-/api/logout | POST | Log out the current user.
-/api/change-password | POST | Change the logged-in user's password.
-/api/add-movie-to-watchlist | POST | Add a movie to your watchlist (by title).
-/api/remove-movie-from-watchlist | DELETE | Remove a movie from your watchlist.
-/api/clear-watchlist | POST | Clear all movies from your watchlist.
-/api/get-all-movies-from-watchlist | GET | Retrieve all movies currently in your watchlist.
-/api/get-movie-from-watchlist-by-title/<title> | GET | Retrieve specific movie details by title.
-/api/get-watchlist-length-and-duration | GET | Get the total number and duration of movies in your watchlist.
+
+| Route | Method | Purpose |
+|:---|:---|:---|
+| `/api/health` | GET | Healthcheck endpoint to verify app is running. |
+| `/api/create-user` | PUT | Register a new user account. |
+| `/api/login` | POST | Log in an existing user. |
+| `/api/logout` | POST | Log out the current user. |
+| `/api/change-password` | POST | Change the logged-in user's password. |
+| `/api/add-movie-to-watchlist` | POST | Add a movie to your watchlist (by title). |
+| `/api/remove-movie-from-watchlist` | DELETE | Remove a movie from your watchlist. |
+| `/api/clear-watchlist` | POST | Clear all movies from your watchlist. |
+| `/api/get-all-movies-from-watchlist` | GET | Retrieve all movies currently in your watchlist. |
+| `/api/get-movie-from-watchlist-by-title/<title>` | GET | Retrieve specific movie details by title. |
+| `/api/get-watchlist-length-and-duration` | GET | Get the total number and duration of movies in your watchlist. |
 
 ## Features
 

@@ -4,7 +4,7 @@ import requests
 from dotenv import load_dotenv
 
 
-from utils.logger import configure_logger
+from watchlist.utils.logger import configure_logger
 
 
 RANDOM_ORG_BASE_URL = os.getenv("RANDOM_ORG_BASE_URL",

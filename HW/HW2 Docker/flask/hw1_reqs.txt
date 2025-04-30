@@ -1,0 +1,41 @@
+Agile:
+1. 
+As a vanilla git power-user that has never seen GiggleGit before, I want to not feel intimidated by the software and feel like I could easily learn it. 
+
+As a team lead onboarding an experienced GiggleGit user, I want to understand and easily monitor the work being done by the new member of my team. 
+
+
+2. 
+User story: As an avid Github user trying GiggleGit for the first time, I want to feel like my experience is transferable and I am not starting from scratch. 
+
+Tasks: Mimic Github’s site navigation layout
+
+Tickets: Display top repositories and recent activity in a column on the left; change font to DejaVu Sans Mono
+
+
+3. Does not specify what type of user, task stated instead of a goal, no reasoning provided. 
+
+
+
+Formal requirements:
+1. 
+Goal: The study will provide useful information about how the average user interacts with SnickerSync.
+
+Non-goal: Each participant’s performance and interaction with the program will be individually analyzed to extract all useful information possible.
+
+
+2. 
+Non-functional requirements:
+1. The research participants will experience a 5 minute break for every 30 minutes of experiment time. 
+
+2. The identities of the research participants will remain unknown both to the people conducting the experiment and in published findings. 
+
+
+3. 
+Functional requirements (of the study):
+1. The study will investigate the average time it takes for a user to successfully “sync with a snicker.”
+2. The study will measure emotional responses in the control groups and variants.
+3. The user study data will be published and made available to all relevant stakeholders.
+4. There will be no interference or guidance with the program given by the PMs running the study. 
+
+

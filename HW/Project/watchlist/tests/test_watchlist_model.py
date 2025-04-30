@@ -5,6 +5,20 @@ import pytest
 from watchlist.models.watchlist_model import WatchlistModel
 from watchlist.models.movie_model import Movies
 
+# this section until there is to fix RuntimeError: Working outside of application context.
+from config import TestConfig
+from watchlist.db import db
+from app import create_app
+
+@pytest.fixture
+def app_context():
+    app = create_app(TestConfig)
+    with app.app_context():
+        db.create_all()
+        yield app
+        db.session.remove()
+        db.drop_all()
+# there
 
 @pytest.fixture()
 def watchlist_model():
@@ -41,7 +55,7 @@ def movie_sonic(session):
     return movie
 
 @pytest.fixture
-def sample_watchlist(movie_flow, movie_):
+def sample_watchlist(movie_clockwork_orange, movie_sonic):
     """Fixture for a sample watchlist."""
     return [movie_clockwork_orange, movie_sonic]
 
@@ -70,18 +84,20 @@ def test_add_duplicate_movie_to_watchlist(watchlist_model, movie_sonic, mocker):
         watchlist_model.add_movie_to_watchlist(movie_sonic.title)
 
 
-def test_remove_movie_from_watchlist(watchlist_model, mocker):
-    """Test removing a movie from the watchlist by song_id."""
+
+
+def test_remove_movie_from_watchlist(app_context, watchlist_model, mocker):
+    """Test removing a movie from the watchlist by title."""
     mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_title", return_value=movie_sonic)
 
     watchlist_model.watchlist = ["A Clockwork Orange","Sonic the Hedgehog 2"]
 
-    watchlist_model.remove_movie_from_watchlist(movie_sonic.title)
+    watchlist_model.remove_movie_from_watchlist("Sonic the Hedgehog 2")
     assert len(watchlist_model.watchlist) == 1, f"Expected 1 movie, but got {len(watchlist_model.watchlist)}"
     assert watchlist_model.watchlist[0] == "A Clockwork Orange", "Expected movie 'A Clockwork Orange' to remain"
 
 
-def test_clear_watchlist(watchlist_model):
+def test_clear_watchlist(app_context, watchlist_model):
     """Test clearing the entire watchlist."""
     watchlist_model.watchlist.append('Sonic the Hedgehog 2')
 
@@ -94,7 +110,7 @@ def test_clear_watchlist(watchlist_model):
 ##################################################
 
 
-def test_get_all_movies(watchlist_model, sample_watchlist, mocker):
+def test_get_all_movies(app_context, watchlist_model, sample_watchlist, mocker):
     """Test successfully retrieving all movies from the watchlist."""
     mocker.patch("watchlist.models.watchlist_model.WatchlistModel._get_movie_from_tmdb", side_effect=sample_watchlist)
 
@@ -107,7 +123,7 @@ def test_get_all_movies(watchlist_model, sample_watchlist, mocker):
     assert all_movies[1].title == 'Sonic the Hedgehog 2'
 
 
-def test_get_movie_by_title(watchlist_model, movie_sonic, mocker):
+def test_get_movie_by_title(app_context, watchlist_model, movie_sonic, mocker):
     """Test successfully retrieving a movie from the watchlist by title."""
     mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_title", return_value=movie_sonic)
     watchlist_model.watchlist.append('Sonic the Hedgehog 2')
@@ -133,7 +149,7 @@ def test_get_watchlist_duration(watchlist_model, sample_watchlist, mocker):
     watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
     assert watchlist_model.get_watchlist_duration() == 4.33, "Expected watchlist duration to be 4.33 hours"
 
-def test_get_random_movie_from_watchlist(watchlist_model, mocker): #not too sure of this guy
+def test_get_random_movie_from_watchlist(app_context, watchlist_model, mocker): #not too sure of this guy
     """Test getting the a random movie from the watchlist."""
     watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
     mocker.patch("watchlist.models.watchlist_model.get_random", return_value=1)

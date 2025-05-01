@@ -149,11 +149,14 @@ def test_get_watchlist_duration(watchlist_model, sample_watchlist, mocker):
     watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
     assert watchlist_model.get_watchlist_duration() == 4.33, "Expected watchlist duration to be 4.33 hours"
 
-def test_get_random_movie_from_watchlist(app_context, watchlist_model, mocker): #not too sure of this guy
+def test_get_random_movie_from_watchlist(app_context, watchlist_model, movie_clockwork_orange, mocker): #not too sure of this guy
     """Test getting the a random movie from the watchlist."""
     watchlist_model.watchlist.extend(["A Clockwork Orange","Sonic the Hedgehog 2"])
+    
+    mocker.patch("watchlist.models.watchlist_model.Movies.get_movie_by_title", return_value=movie_clockwork_orange)
     mocker.patch("watchlist.models.watchlist_model.get_random", return_value=1)
-    assert watchlist_model.get_random_movie_from_watchlist() == 'A Clockwork Orange', "Random index should correspond to first movie in list"
+    random_title = watchlist_model.get_random_movie_from_watchlist().title
+    assert random_title == 'A Clockwork Orange', "Random index should correspond to first movie in list"
 
 
 ##################################################

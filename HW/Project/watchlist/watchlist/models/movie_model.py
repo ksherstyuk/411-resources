@@ -106,7 +106,7 @@ class Movies(db.Model):
             raise
 
     @classmethod
-    def get_movie_by_title(cls, title: str) -> "Movies":
+    def get_movie_by_title(cls, title0: str) -> "Movies":
         """
         Retrieves a movie from the database by its title.
 
@@ -120,14 +120,14 @@ class Movies(db.Model):
             ValueError: If no movie with the given title is found.
             SQLAlchemyError: If a database error occurs.
         """
-        logger.info(f"Attempting to retrieve movie with title '{title}'")
+        logger.info(f"Attempting to retrieve movie with title '{title0}'")
 
         try:
-            movie = cls.query.filter_by(title=title.strip()).first()
+            movie = cls.query.filter_by(title=title0.strip()).first()
 
             if not movie:
-                logger.info(f"Movie with title '{title}' not found in database")
-                raise ValueError(f"Movie with title '{title}' not found")
+                logger.info(f"Movie with title '{title0}' not found in database")
+                raise ValueError(f"Movie with title '{title0}' not found")
 
             logger.info(
                 f"Successfully retrieved Movie: {movie.title} ({movie.release_year})"
@@ -136,6 +136,6 @@ class Movies(db.Model):
 
         except SQLAlchemyError as e:
             logger.error(
-                f"Database error while retrieving movie by title '{title}': {e}"
+                f"Database error while retrieving movie by title '{title0}': {e}"
             )
             raise

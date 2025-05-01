@@ -95,6 +95,7 @@ class WatchlistModel:
 
         Raises:
             ValueError: If the watchlist is empty or the movie title is invalid.
+        
         """
         logger.info(f"Received request to remove movie '{title}'")
 
@@ -107,13 +108,6 @@ class WatchlistModel:
 
         self.watchlist.remove(title)
         logger.info(f"Successfully removed movie '{title}' from the watchlist")
-
-        try:
-            Movies.delete_movie(title)
-            logger.info(f"Successfully deleted movie '{title}' from database")
-        except ValueError as e:
-            logger.error(f"Movie '{title}' could not be deleted from database: {e}")
-            raise
 
     def clear_watchlist(self) -> None:
         """Clears all movies from the watchlist and deletes them from the database.
@@ -211,7 +205,7 @@ class WatchlistModel:
 
         index = get_random(self.get_watchlist_length())
         selected_title = self.watchlist[index - 1]
-        movie = self._get_movie_from_tmdb(selected_title)
+        movie = Movies.get_movie_by_title(selected_title)
 
         logger.info(
             f"Successfully retrieved random movie from watchlist: {movie.title} ({movie.release_year})"
